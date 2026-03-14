@@ -1,17 +1,6 @@
-#Main entry point for frontend 
+from __future__ import annotations
 from flask import Flask, render_template
 
-app = Flask(__name__)
-app.config['TEMPLATES_AUTO_RELOAD'] = True
-
-@app.route("/")
-def home():
-    return render_template("index.html")
-
-if __name__ == "__main__":
-    app.run(debug=True)"""Main API entrypoint for Git integration webhook and league table endpoints."""
-
-from __future__ import annotations
 
 import hashlib
 import hmac
@@ -21,6 +10,18 @@ import os
 from fastapi import FastAPI, Header, HTTPException, Query, Request
 
 from github_logic import GitLeagueEngine
+
+app = Flask(__name__)
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+
+@app.route("/")
+def home():
+    return render_template("index.html")
+
+if __name__ == "__main__":
+    app.run(debug=True)
+	
+"""Main API entrypoint for Git integration webhook and league table endpoints."""
 
 
 # Create the FastAPI app instance.
