@@ -1,8 +1,12 @@
-body {
-    background-color: #000000;
-    font-family: sans-serif;
-    text-align: center;
-    margin-top: 50px;
+:root {
+    --league-purple: #f3e8ff;
+    --league-blue: #e0f2fe;
+    --league-ink: #0f172a;
+    --league-muted: #475569;
+}
+
+[x-cloak] {
+    display: none !important;
 }
 
 body {
