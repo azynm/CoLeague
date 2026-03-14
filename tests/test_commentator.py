@@ -15,10 +15,13 @@ def test_all_scenarios():
             audio_data = generate_commentary_audio(events)
             
             if audio_data:
+                output_dir = "outputs"
+                os.makedirs(output_dir, exist_ok=True)
                 filename = f"test_{scenario_name.lower().replace(' ', '_').replace(':', '')}.mp3"
-                with open(filename, "wb") as f:
+                filepath = os.path.join(output_dir, filename)
+                with open(filepath, "wb") as f:
                     f.write(audio_data)
-                print(f"Success! Saved output to {filename}\n")
+                print(f"Success! Saved output to {filepath}\n")
             else:
                 print(f"Failed to generate audio for {scenario_name}.\n")
         except Exception as e:
