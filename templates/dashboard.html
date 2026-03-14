@@ -8,7 +8,7 @@
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body class="text-slate-800 league-bg">
@@ -19,11 +19,11 @@
         class="mx-auto max-w-7xl px-4 pb-8 pt-5 sm:px-6 lg:px-8 fade-in"
         x-data="{ selectedPlayer: null, splitView: false }"
     >
-        <nav class="glass mb-6 rounded-2xl bg-gradient-to-r from-[#F3E8FF]/80 to-[#E0F2FE]/90 px-5 py-4">
+        <nav class="glass card-glow mb-6 rounded-2xl bg-gradient-to-r from-[#F3E8FF]/80 to-[#E0F2FE]/90 px-5 py-4">
             <div class="flex items-center justify-between gap-4">
                 <div>
                     <h1 class="text-2xl font-bold tracking-tight text-slate-900">CoLeague</h1>
-                    <p class="mt-1 text-sm text-slate-600">Last Updated: <span class="mono-data">{{ dashboard_last_updated }}</span></p>
+                    <p class="mt-1 text-sm text-slate-600" style="font-family: 'JetBrains Mono', monospace;">// last updated: <span style="font-weight: 600;">{{ dashboard_last_updated }}</span></p>
                 </div>
 
                 <div class="relative" x-data="{ open: false }">
@@ -76,7 +76,33 @@
                             >
                                 <td class="px-4 py-4 align-middle">
                                     <div class="flex items-center gap-2">
+                                        {% if player.rank == 1 %}
+                                        <svg class="h-6 w-6 text-amber-400 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor" aria-label="Gold medal" role="img">
+                                            <path d="M7 2h4l1 6H8L7 2Z" />
+                                            <path d="M13 2h4l-1 6h-4l1-6Z" />
+                                            <circle cx="12" cy="15" r="6.5" />
+                                            <circle cx="12" cy="15" r="3.1" fill="rgba(255,255,255,0.35)" />
+                                            <path d="M12 12.7l.9 1.8 2 .3-1.45 1.4.34 2-1.79-.94-1.79.94.34-2-1.45-1.4 2-.3.9-1.8Z" fill="white" />
+                                        </svg>
+                                        {% elif player.rank == 2 %}
+                                        <svg class="h-6 w-6 text-slate-400 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor" aria-label="Silver medal" role="img">
+                                            <path d="M7 2h4l1 6H8L7 2Z" />
+                                            <path d="M13 2h4l-1 6h-4l1-6Z" />
+                                            <circle cx="12" cy="15" r="6.5" />
+                                            <circle cx="12" cy="15" r="3.1" fill="rgba(255,255,255,0.35)" />
+                                            <path d="M12 12.7l.9 1.8 2 .3-1.45 1.4.34 2-1.79-.94-1.79.94.34-2-1.45-1.4 2-.3.9-1.8Z" fill="white" />
+                                        </svg>
+                                        {% elif player.rank == 3 %}
+                                        <svg class="h-6 w-6 text-orange-500 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor" aria-label="Bronze medal" role="img">
+                                            <path d="M7 2h4l1 6H8L7 2Z" />
+                                            <path d="M13 2h4l-1 6h-4l1-6Z" />
+                                            <circle cx="12" cy="15" r="6.5" />
+                                            <circle cx="12" cy="15" r="3.1" fill="rgba(255,255,255,0.35)" />
+                                            <path d="M12 12.7l.9 1.8 2 .3-1.45 1.4.34 2-1.79-.94-1.79.94.34-2-1.45-1.4 2-.3.9-1.8Z" fill="white" />
+                                        </svg>
+                                        {% else %}
                                         <span class="mono-data text-base font-bold text-slate-900">{{ player.rank }}</span>
+                                        {% endif %}
                                         {% if player.stats.positive_messages > player.stats.negative_messages %}
                                         <svg class="h-4 w-4 text-emerald-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                             <path fill-rule="evenodd" d="M10 3a1 1 0 0 1 .707.293l5 5a1 1 0 1 1-1.414 1.414L11 6.414V16a1 1 0 1 1-2 0V6.414L5.707 9.707A1 1 0 0 1 4.293 8.293l5-5A1 1 0 0 1 10 3Z" clip-rule="evenodd" />
