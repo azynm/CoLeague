@@ -1,7 +1,6 @@
 import requests
 
-def get_github_data(token, repo, headers):
-    #headers = {'Authorization': f"token {token}"}
+def get_github_data(repo, headers):
     endpoints = ["/commits", "/branches", "/issues?state=all"]
     
 	#Loops through all endpoints to collect the data
@@ -20,9 +19,6 @@ def get_github_data(token, repo, headers):
 					out.append({"type":"branch", })
 				elif e == "/issues?state=all":
 					out.append({"type":"issues", })
-
-    raw_data = resp.json()
-    formatted = []
 
     # Normalize different API responses into one format for the template
     for item in raw_data[:10]: # Limit to last 10

@@ -2,8 +2,9 @@ from flask import Flask, redirect, url_for, session, request, render_template
 import os
 import requests
 from discord_logic import fetch_latest_messages
-from github_logic import get_detailed_github_data
+from github_logic2 import get_detailed_github_data
 import json
+from datetime import datetime, timedelta
 
 #Setup constants
 DISCORD_CLIENT_ID = os.getenv("DISCORD_CLIENT_ID")
@@ -94,17 +95,25 @@ def github_callback():
 #Dashboard page for each league/server
 @app.route('/dashboard/<dashboard_id>')
 def dashboard(dashboard_id):
+    #Setup headers
+    discord_headers = {"Authorization": f"Bot {BOT_TOKEN}"}
+    github_headers = {"Authorization": f"token {session['github_access_token']}"}
+    
     #Fetch a list of all channels in the server
-    headers = {"Authorization": f"Bot {BOT_TOKEN}"}
-    r = requests.get(f"https://discord.com/api/v10/guilds/{dashboard_id}/channels", headers=headers)
+    r = requests.get(f"https://discord.com/api/v10/guilds/{dashboard_id}/channels", headers=discord_headers)
     if r.status_code != 200:
         return f"Error: Could not fetch channels. Is the bot in the server? (Code: {r.status_code})"
 
     #Filter for text channels and scrape messages
     channels = r.json()
     text_channels = [c for c in channels if c['type'] == 0]
+    now = datetime.now()
+    two_hours_ago = now - timedelta(hours=3)
     for c in text_channels:
-        print(fetch_latest_messages(c['id'], headers))
+        print(fetch_latest_messages(c['id'], discord_headers, two_hours_ago))
+    
+    #Fetch all commit history
+    print(get_detailed_github_data("azynm/blahajathon", headers=github_headers))
     
     with open('players.json', 'r') as file:
         data = json.load(file)
