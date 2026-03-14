@@ -113,11 +113,16 @@ def dashboard(dashboard_id):
 
     #Collect Discord events and generate commentary
     events = collect_discord_events(dashboard_id)
+    print(f"DEBUG: events = {events}")
     if events:
         from commentator.commentator import determine_style, generate_script, generate_audio_from_text
+        print("DEBUG: Starting commentary generation...")
         style = determine_style(events)
+        print(f"DEBUG: Style determined = {style}")
         script = generate_script(events, style=style)
+        print(f"DEBUG: Script generated = {script[:50]}...")
         audio = generate_audio_from_text(script, style=style)
+        print(f"DEBUG: Audio length = {len(audio)} bytes")
 
         if audio:
             timestamp = time.time()
@@ -137,6 +142,7 @@ def dashboard(dashboard_id):
             })
             commentary_history[dashboard_id] = commentary_history[dashboard_id][-10:]
             last_generated[dashboard_id] = timestamp
+            print(f"DEBUG: Commentary added to history!")
 
     with open('players.json', 'r') as file:
         data = json.load(file)
