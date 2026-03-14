@@ -1,25 +1,32 @@
-from flask import Flask, redirect, url_for, session, request, render_template, Response
+from flask import Flask, redirect, url_for, session, request, render_template
 import os
 import requests
-from discord_logic import fetch_latest_messages, analyse_sentiment
+from discord_logic import fetch_all_messages, analyse_sentiment
 from commentator.commentator import generate_commentary_audio
+from github_logic import get_detailed_github_data 
 import json
 from pathlib import Path
 import uuid
-
+from commentator.commentator import determine_style, generate_script, generate_audio_from_text
 from werkzeug.utils import secure_filename
+from datetime import datetime, timedelta
+import time
 
 #Setup constants
-CLIENT_ID = os.getenv("DISCORD_CLIENT_ID")
-CLIENT_SECRET = os.getenv("DISCORD_CLIENT_SECRET")
+DISCORD_CLIENT_ID = os.getenv("DISCORD_CLIENT_ID")
+DISCORD_CLIENT_SECRET = os.getenv("DISCORD_CLIENT_SECRET")
+GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
+GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
 BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
-REDIRECT_URI = 'http://localhost:5000/discord_callback'
-DISCORD_AUTH_URL = f"https://discord.com/api/oauth2/authorize?client_id={CLIENT_ID}&redirect_uri={REDIRECT_URI}&response_type=code&scope=identify+guilds+bot&permissions=65536&prompt=consent"
+REDIRECT_URI = "http://127.0.0.1:5000/discord_callback"
+DISCORD_AUTH_URL = f"https://discord.com/api/oauth2/authorize?client_id={DISCORD_CLIENT_ID}&redirect_uri={REDIRECT_URI}&response_type=code&scope=identify+guilds+bot&permissions=65536&prompt=consent"
+GITHUB_AUTH_URL = f"https://github.com/login/oauth/authorize?client_id={GITHUB_CLIENT_ID}&scope=repo" 
 
 #Start Flask app
 app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
-app.secret_key = "bum"
+app.secret_key = "bum2"
+
 app.config['UPLOAD_FOLDER'] = str(Path("static") / "uploads")
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 
@@ -39,64 +46,24 @@ def _profile_context() -> dict[str, str]:
         "avatar": session.get('profile_picture', ''),
     }
 
-
-
-import time
-import hashlib
-
-# Store commentary history per guild (list of dicts with timestamp, style, script, audio)
-commentary_history = {}
-# Track last generation time per guild
-last_generated = {}
-# Track hash of last messages to detect changes
-last_message_hash = {}
-
-
-def collect_discord_events(dashboard_id):
-    """Fetch messages from all text channels in a guild and build a commentator events dict.
-    Returns (events_dict, messages_hash) tuple, or (None, None) on failure.
-    """
-    headers = {"Authorization": f"Bot {BOT_TOKEN}"}
-    r = requests.get(f"https://discord.com/api/v10/guilds/{dashboard_id}/channels", headers=headers)
-    if r.status_code != 200:
-        return None, None
-
-    channels = r.json()
-    text_channels = [c for c in channels if c["type"] == 0]
-
-    all_messages = []
-    for c in text_channels:
-        all_messages.extend(fetch_latest_messages(c["id"], headers))
-
-    # Create a hash of all messages to detect changes
-    msg_str = "|".join(f"{m['author']}:{m['content']}:{m['timestamp']}" for m in all_messages)
-    msg_hash = hashlib.md5(msg_str.encode()).hexdigest()
-
-    sentiment = analyse_sentiment(all_messages)
-    print(f"Discord analysis — sentiment: {sentiment}")
-
-    events = {
-        "discord_sentiment": sentiment,
-        "discord_spam_count": 0,
-        "recent_commits": [],
-        "pull_requests_merged": 0,
-    }
-    return events, msg_hash
-
-
 #Home screen
 @app.route('/')
 def index():
-    #If not logged in, send to login page
-    if 'access_token' not in session:
-        return render_template("login.html", auth_url=DISCORD_AUTH_URL)
+    #If not logged in, send to appropriate login page
+    if 'discord_access_token' not in session:
+        if 'github_access_token' not in session:
+            return render_template("login.html", step=2, discord_auth_url=DISCORD_AUTH_URL, github_auth_url=GITHUB_AUTH_URL)
+        else:
+            return render_template("login.html", step=0, discord_auth_url=DISCORD_AUTH_URL, github_auth_url=GITHUB_AUTH_URL)
+    if 'github_access_token' not in session:
+        return render_template("login.html", step=1, discord_auth_url=DISCORD_AUTH_URL, github_auth_url=GITHUB_AUTH_URL)
 
     #Get all the servers the bot is in
     bot_servers = requests.get("https://discord.com/api/users/@me/guilds", headers={"Authorization": f"Bot {BOT_TOKEN}"}).json()
     bot_server_ids = set([g["id"] for g in bot_servers])
 
     #Get all the servers the user is in
-    user_servers = requests.get("https://discord.com/api/users/@me/guilds", headers={"Authorization": f"Bearer {session['access_token']}"}).json()
+    user_servers = requests.get("https://discord.com/api/users/@me/guilds", headers={"Authorization": f"Bearer {session['discord_access_token']}"}).json()
     
     #Make a list of all servers we can participate in
     servers = []
@@ -108,86 +75,65 @@ def index():
             servers.append(s)
     
     #Show the page
-    return render_template(
-        "index.html",
-        guilds=servers,
-        username=session['username'],
-        client_id=CLIENT_ID,
-        redirect_uri=REDIRECT_URI,
-        current_user=_profile_context(),
-    )
+    return render_template("index.html", guilds=servers, username=session['username'], client_id=DISCORD_CLIENT_ID, redirect_uri=REDIRECT_URI) 
 
 
 
-#Callback page
+#Discord callback page
 @app.route('/discord_callback')
-def callback():
+def discord_callback(): 
     #Get code from Discord callback for handshake
     code = request.args.get('code')
     
     #Perform handshake
-    data = {'client_id': CLIENT_ID, 'client_secret': CLIENT_SECRET, 'grant_type': 'authorization_code', 'code': code, 'redirect_uri': REDIRECT_URI}
+    data = {'client_id': DISCORD_CLIENT_ID, 'client_secret': DISCORD_CLIENT_SECRET, 'grant_type': 'authorization_code', 'code': code, 'redirect_uri': REDIRECT_URI}
     r = requests.post("https://discord.com/api/oauth2/token", data=data).json()
     
     #Get new access token
-    session['access_token'] = r.get('access_token')
+    session['discord_access_token'] = r.get('access_token')
     
     #Get username
-    user_data = requests.get("https://discord.com/api/users/@me", headers={"Authorization": f"Bearer {session['access_token']}"}).json()
+    user_data = requests.get("https://discord.com/api/users/@me", headers={"Authorization": f"Bearer {session['discord_access_token']}"}).json()
     session['username'] = user_data.get('username')
     
     return redirect(url_for('index'))
 
 
 
-#Dashboard
+@app.route('/github_callback')
+def github_callback(): 
+    #Get code from Github callback for handshake
+    code = request.args.get('code')
+    
+    data = {'client_id': GITHUB_CLIENT_ID, 'client_secret': GITHUB_CLIENT_SECRET, 'code': code}
+    r = requests.post("https://github.com/login/oauth/access_token", data=data, headers={'Accept': 'application/json'}).json()
+    
+    #Get new access token
+    session['github_access_token'] = r.get('access_token')
+    
+    return redirect(url_for('index'))
+
+
+
+#Dashboard page for each league/server
 @app.route('/dashboard/<dashboard_id>')
 def dashboard(dashboard_id):
-    #Fetch a list of all channels in the server
-    headers = {"Authorization": f"Bot {BOT_TOKEN}"}
-    r = requests.get(f"https://discord.com/api/v10/guilds/{dashboard_id}/channels", headers=headers)
-    if r.status_code != 200:
-        return f"Error: Could not fetch channels. Is the bot in the server? (Code: {r.status_code})"
-
-    #Collect Discord events and generate commentary
-    events, msg_hash = collect_discord_events(dashboard_id)
-    print(f"DEBUG: events = {events}")
-    if events:
-        from commentator.commentator import determine_style, generate_script, generate_audio_from_text
-        print("DEBUG: Starting commentary generation...")
-        style = determine_style(events)
-        print(f"DEBUG: Style determined = {style}")
-        script = generate_script(events, style=style)
-        print(f"DEBUG: Script generated = {script[:50]}...")
-        audio = generate_audio_from_text(script, style=style)
-        print(f"DEBUG: Audio length = {len(audio)} bytes")
-
-        if audio:
-            timestamp = time.time()
-            entry_id = hashlib.md5(f"{dashboard_id}_{timestamp}".encode()).hexdigest()[:12]
-
-            # Initialize history list if needed
-            if dashboard_id not in commentary_history:
-                commentary_history[dashboard_id] = []
-
-            # Add to history (keep last 10)
-            commentary_history[dashboard_id].append({
-                "id": entry_id,
-                "timestamp": timestamp,
-                "style": style,
-                "script": script,
-                "audio": audio
-            })
-            commentary_history[dashboard_id] = commentary_history[dashboard_id][-10:]
-            last_generated[dashboard_id] = timestamp
-            last_message_hash[dashboard_id] = msg_hash
-            print(f"DEBUG: Commentary added to history!")
-
+    #Setup headers
+    discord_headers = {"Authorization": f"Bot {BOT_TOKEN}"}
+    github_headers = {"Authorization": f"token {session['github_access_token']}"}
+    now = datetime.now()
+    last_time = now - timedelta(hours=3)
+    
+    #Fetch all data
+    github_data = get_detailed_github_data("azynm/blahajathon", github_headers, last_time)
+    discord_data = fetch_all_messages(dashboard_id, discord_headers, last_time)
+    
+    print(github_data, discord_data) 
+    
     with open('players.json', 'r') as file:
         data = json.load(file)
 
-    return render_template("dashboard.html", players=data, current_user=_profile_context())
-
+    return render_template("dashboard.html", players=data)
 
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():
