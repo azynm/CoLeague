@@ -10,6 +10,26 @@ from collections import defaultdict
 
 SCORES_FILE = "scores.json"
 
+# Map every known alias (lowercase) to a canonical display name
+PLAYER_ALIASES = {
+    "azynm": "Zayn",
+    "zayn": "Zayn",
+    "lackshaj": "Lacksha",
+    "lacksha.": "Lacksha",
+    "lacksha": "Lacksha",
+    "aadideepchand20": "Aadi",
+    "aadi deepchand": "Aadi",
+    "aadi": "Aadi",
+    "sophacode": "Sophia",
+    "soph.advinc": "Sophia",
+    "soupdewoop": "Sophia",
+}
+
+
+def resolve_player(name):
+    """Resolve a raw username to a canonical player name."""
+    return PLAYER_ALIASES.get(name.lower(), None)
+
 
 def load_scores():
     """Load scores from JSON file."""
@@ -32,6 +52,7 @@ def ensure_player(data, player_id, discord_id=None, github_id=None):
         data["players"][player_id] = {
             "discord_id": discord_id or player_id,
             "github_id": github_id or player_id,
+            "display_name": None,
             "overall": 0,
             "discord_score": 0,
             "git_score": 0,
@@ -48,6 +69,16 @@ def ensure_player(data, player_id, discord_id=None, github_id=None):
             }
         }
     return data["players"][player_id]
+
+
+def set_display_name(canonical_name, display_name):
+    """Set a custom display name for a player."""
+    data = load_scores()
+    if canonical_name in data["players"]:
+        data["players"][canonical_name]["display_name"] = display_name
+        save_scores(data)
+        return True
+    return False
 
 
 # =============================================================================
@@ -298,21 +329,40 @@ def update_scores(discord_messages, sentiment_result, github_data):
     git_scores, git_stats, branches_claimed = calculate_git_scores(github_data, branches_claimed)
     data["branches_claimed"] = branches_claimed
 
-    # Combine all players
-    all_players = set(discord_scores.keys()) | set(git_scores.keys())
+    # Combine all players, resolving aliases and skipping unknowns
+    all_raw = set(discord_scores.keys()) | set(git_scores.keys())
+
+    # Aggregate scores by canonical name
+    resolved_discord = defaultdict(int)
+    resolved_git = defaultdict(int)
+    resolved_discord_stats = defaultdict(lambda: defaultdict(int))
+    resolved_git_stats = defaultdict(lambda: defaultdict(int))
+
+    for raw in all_raw:
+        canonical = resolve_player(raw)
+        if not canonical:
+            continue
+        resolved_discord[canonical] += discord_scores.get(raw, 0)
+        resolved_git[canonical] += git_scores.get(raw, 0)
+        for key, value in discord_stats.get(raw, {}).items():
+            resolved_discord_stats[canonical][key] += value
+        for key, value in git_stats.get(raw, {}).items():
+            resolved_git_stats[canonical][key] += value
+
+    all_players = set(resolved_discord.keys()) | set(resolved_git.keys())
 
     for player in all_players:
         p = ensure_player(data, player)
 
         # Add deltas to scores
-        p["discord_score"] += discord_scores.get(player, 0)
-        p["git_score"] += git_scores.get(player, 0)
+        p["discord_score"] += resolved_discord.get(player, 0)
+        p["git_score"] += resolved_git.get(player, 0)
         p["overall"] = p["discord_score"] + p["git_score"]
 
         # Update stats
-        for key, value in discord_stats.get(player, {}).items():
+        for key, value in resolved_discord_stats.get(player, {}).items():
             p["stats"][key] = p["stats"].get(key, 0) + value
-        for key, value in git_stats.get(player, {}).items():
+        for key, value in resolved_git_stats.get(player, {}).items():
             p["stats"][key] = p["stats"].get(key, 0) + value
 
     # Update recent record based on overall sentiment
@@ -324,8 +374,9 @@ def update_scores(discord_messages, sentiment_result, github_data):
     for highlight in highlights:
         words = highlight.split()
         if words:
-            player = words[0].rstrip(",.:!")
-            if player in data["players"]:
+            raw_name = words[0].rstrip(",.:!")
+            player = resolve_player(raw_name)
+            if player and player in data["players"]:
                 data["players"][player]["recent_record"].append(record_entry)
                 data["players"][player]["recent_record"] = data["players"][player]["recent_record"][-5:]
 
@@ -343,7 +394,7 @@ def get_leaderboard():
         stats = info.get("stats", {})
         leaderboard.append({
             "id": player_id,
-            "name": player_id,
+            "name": info.get("display_name") or player_id,
             "overall_points": info["overall"],
             "discord_score": info["discord_score"],
             "git_score": info["git_score"],

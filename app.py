@@ -8,7 +8,7 @@ import requests
 from discord_logic import fetch_all_messages, analyse_sentiment
 from commentator.commentator import generate_commentary_audio
 from github_logic import get_detailed_github_data
-from scoring import update_scores, get_leaderboard
+from scoring import update_scores, get_leaderboard, set_display_name, resolve_player
 import json
 from pathlib import Path
 import uuid
@@ -258,6 +258,11 @@ def settings():
 
         if display_name:
             session['profile_name'] = display_name
+            # Persist display name to scoring system
+            discord_username = session.get('username', '')
+            canonical = resolve_player(discord_username)
+            if canonical:
+                set_display_name(canonical, display_name)
 
         if picture_file and picture_file.filename:
             if _is_allowed_image(picture_file.filename):

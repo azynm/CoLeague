@@ -1,0 +1,122 @@
+{
+  "players": {
+    "Zayn": {
+      "discord_id": "azynm",
+      "github_id": "azynm",
+      "overall": 647,
+      "discord_score": 347,
+      "git_score": 300,
+      "recent_record": [
+        "bad",
+        "bad",
+        "bad",
+        "bad",
+        "bad"
+      ],
+      "stats": {
+        "messages_sent": 0,
+        "positive_mentions": 2,
+        "negative_mentions": 12,
+        "commits": 40,
+        "merges": 0,
+        "merge_conflicts": 0,
+        "main_commits": 0,
+        "branches_used": [],
+        "messages": 233,
+        "spam_penalty": 0,
+        "reply_bonus": 200,
+        "new_branches": 2,
+        "prs_merged": 40
+      }
+    },
+    "Lacksha": {
+      "discord_id": "lacksha.",
+      "github_id": "lackshaj",
+      "overall": 852,
+      "discord_score": 392,
+      "git_score": 460,
+      "recent_record": [
+        "bad",
+        "bad",
+        "bad",
+        "bad",
+        "bad"
+      ],
+      "stats": {
+        "messages_sent": 0,
+        "positive_mentions": 0,
+        "negative_mentions": 1,
+        "commits": 80,
+        "merges": 0,
+        "merge_conflicts": 0,
+        "main_commits": 0,
+        "branches_used": [],
+        "messages": 200,
+        "spam_penalty": 0,
+        "reply_bonus": 200,
+        "good_merges": 60
+      }
+    },
+    "Aadi": {
+      "discord_id": "aadideepchand20",
+      "github_id": "Aadi Deepchand",
+      "overall": 832,
+      "discord_score": 752,
+      "git_score": 80,
+      "recent_record": [
+        "bad",
+        "bad",
+        "bad",
+        "bad",
+        "bad"
+      ],
+      "stats": {
+        "messages_sent": 0,
+        "positive_mentions": 0,
+        "negative_mentions": 1,
+        "commits": 40,
+        "merges": 0,
+        "merge_conflicts": 0,
+        "main_commits": 0,
+        "branches_used": [],
+        "messages": 560,
+        "spam_penalty": 0,
+        "reply_bonus": 200
+      }
+    },
+    "Sophia": {
+      "discord_id": "soupdewoop",
+      "github_id": "sophacode",
+      "overall": 772,
+      "discord_score": 442,
+      "git_score": 330,
+      "recent_record": [
+        "bad",
+        "bad",
+        "bad"
+      ],
+      "stats": {
+        "messages_sent": 0,
+        "positive_mentions": 2,
+        "negative_mentions": 1,
+        "commits": 60,
+        "merges": 0,
+        "merge_conflicts": 0,
+        "main_commits": 0,
+        "branches_used": [],
+        "messages": 240,
+        "spam_penalty": 0,
+        "reply_bonus": 200,
+        "new_branches": 1,
+        "prs_merged": 20,
+        "good_merges": 20
+      }
+    }
+  },
+  "branches_claimed": {
+    "stylingUI2": "Sophia",
+    "commentatorfix": "Zayn",
+    "improve-commentary": "Zayn"
+  },
+  "last_updated": "2026-03-15T02:23:40.915482"
+}

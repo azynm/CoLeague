@@ -20,6 +20,7 @@
         x-data="{
             selectedPlayer: null,
             splitView: false,
+            players: [],
             commentaryHistory: [],
             currentlyPlaying: null,
             isPlaying: false,
@@ -44,6 +45,16 @@
                 this.isPlaying = false;
                 this.currentlyPlaying = null;
             },
+            async fetchLeaderboard() {
+                try {
+                    const response = await fetch('/api/leaderboard');
+                    if (response.ok) {
+                        this.players = await response.json();
+                    }
+                } catch (e) {
+                    console.error('Leaderboard fetch failed:', e);
+                }
+            },
             async fetchHistory() {
                 if (this.isFetching) return;
                 this.isFetching = true;
@@ -55,6 +66,7 @@
                 } catch (e) {
                     console.error('Commentary fetch failed:', e);
                 }
+                await this.fetchLeaderboard();
                 this.isFetching = false;
                 this.countdown = 20;
             }
@@ -124,19 +136,16 @@
                             </tr>
                         </thead>
                         <tbody class="text-sm">
-                            {% for player in dashboard_players %}
-                            {% set mention_total = player.stats.positive_messages + player.stats.negative_messages %}
-                            {% set result_positive = (player.stats.positive_messages * 5) // (mention_total if mention_total > 0 else 1) %}
-                            {% set result_negative = (player.stats.negative_messages * 5) // (mention_total if mention_total > 0 else 1) %}
-                            {% set result_neutral = 5 - result_positive - result_negative %}
+                            <template x-for="(player, idx) in players" :key="player.id">
                             <tr
-                                class="stagger-item cursor-pointer border-b border-white/50 transition hover:bg-white/60 {% if loop.index0 % 2 == 0 %}bg-[#F3E8FF]/45{% else %}bg-[#E0F2FE]/45{% endif %}"
-                                @click='selectedPlayer = {{ player|tojson }}; splitView = true'
+                                class="stagger-item cursor-pointer border-b border-white/50 transition hover:bg-white/60"
+                                :class="idx % 2 === 0 ? 'bg-[#F3E8FF]/45' : 'bg-[#E0F2FE]/45'"
+                                @click="selectedPlayer = player; splitView = true"
                             >
                                 <td class="px-4 py-4 align-middle">
                                     <div class="flex items-center gap-2">
                                         <span class="inline-flex h-6 w-6 items-center justify-center">
-                                        {% if player.rank == 1 %}
+                                        <template x-if="player.rank === 1">
                                         <svg class="h-6 w-6 text-amber-400 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor" aria-label="Gold medal" role="img">
                                             <path d="M7 2h4l1 6H8L7 2Z" />
                                             <path d="M13 2h4l-1 6h-4l1-6Z" />
@@ -144,7 +153,8 @@
                                             <circle cx="12" cy="15" r="3.1" fill="rgba(255,255,255,0.35)" />
                                             <path d="M12 12.7l.9 1.8 2 .3-1.45 1.4.34 2-1.79-.94-1.79.94.34-2-1.45-1.4 2-.3.9-1.8Z" fill="white" />
                                         </svg>
-                                        {% elif player.rank == 2 %}
+                                        </template>
+                                        <template x-if="player.rank === 2">
                                         <svg class="h-6 w-6 text-slate-400 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor" aria-label="Silver medal" role="img">
                                             <path d="M7 2h4l1 6H8L7 2Z" />
                                             <path d="M13 2h4l-1 6h-4l1-6Z" />
@@ -152,7 +162,8 @@
                                             <circle cx="12" cy="15" r="3.1" fill="rgba(255,255,255,0.35)" />
                                             <path d="M12 12.7l.9 1.8 2 .3-1.45 1.4.34 2-1.79-.94-1.79.94.34-2-1.45-1.4 2-.3.9-1.8Z" fill="white" />
                                         </svg>
-                                        {% elif player.rank == 3 %}
+                                        </template>
+                                        <template x-if="player.rank === 3">
                                         <svg class="h-6 w-6 text-orange-500 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor" aria-label="Bronze medal" role="img">
                                             <path d="M7 2h4l1 6H8L7 2Z" />
                                             <path d="M13 2h4l-1 6h-4l1-6Z" />
@@ -160,73 +171,69 @@
                                             <circle cx="12" cy="15" r="3.1" fill="rgba(255,255,255,0.35)" />
                                             <path d="M12 12.7l.9 1.8 2 .3-1.45 1.4.34 2-1.79-.94-1.79.94.34-2-1.45-1.4 2-.3.9-1.8Z" fill="white" />
                                         </svg>
-                                        {% else %}
-                                        <span class="mono-data inline-flex h-6 w-6 items-center justify-center text-base font-bold text-slate-900">{{ player.rank }}</span>
-                                        {% endif %}
+                                        </template>
+                                        <template x-if="player.rank > 3">
+                                        <span class="mono-data inline-flex h-6 w-6 items-center justify-center text-base font-bold text-slate-900" x-text="player.rank"></span>
+                                        </template>
                                         </span>
-                                        {% if player.stats.positive_messages > player.stats.negative_messages %}
+                                        <template x-if="player.stats.positive_messages > player.stats.negative_messages">
                                         <svg class="h-4 w-4 text-emerald-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                             <path fill-rule="evenodd" d="M10 3a1 1 0 0 1 .707.293l5 5a1 1 0 1 1-1.414 1.414L11 6.414V16a1 1 0 1 1-2 0V6.414L5.707 9.707A1 1 0 0 1 4.293 8.293l5-5A1 1 0 0 1 10 3Z" clip-rule="evenodd" />
                                         </svg>
-                                        {% elif player.stats.positive_messages < player.stats.negative_messages %}
+                                        </template>
+                                        <template x-if="player.stats.positive_messages < player.stats.negative_messages">
                                         <svg class="h-4 w-4 text-rose-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                             <path fill-rule="evenodd" d="M10 17a1 1 0 0 1-.707-.293l-5-5a1 1 0 0 1 1.414-1.414L9 13.586V4a1 1 0 1 1 2 0v9.586l3.293-3.293a1 1 0 1 1 1.414 1.414l-5 5A1 1 0 0 1 10 17Z" clip-rule="evenodd" />
                                         </svg>
-                                        {% else %}
+                                        </template>
+                                        <template x-if="player.stats.positive_messages === player.stats.negative_messages">
                                         <span class="mono-data text-xs text-slate-500">--</span>
-                                        {% endif %}
+                                        </template>
                                     </div>
                                 </td>
                                 <td class="px-4 py-4">
                                     <div class="flex items-center gap-3">
-                                        <span class="mono-data inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/80 bg-white/70 text-xs font-bold text-slate-700">P{{ player.rank }}</span>
-                                        <p class="font-medium text-slate-900">{{ player.name }}</p>
+                                        <span class="mono-data inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/80 bg-white/70 text-xs font-bold text-slate-700" x-text="'P' + player.rank"></span>
+                                        <p class="font-medium text-slate-900" x-text="player.name"></p>
                                     </div>
                                 </td>
-                                <td class="mono-data px-4 py-4 text-lg font-bold text-sky-700">{{ player.overall_points }}</td>
-                                <td class="mono-data px-4 py-4 font-semibold text-slate-800">{{ player.stats.commits }}</td>
-                                <td class="mono-data px-4 py-4 font-semibold text-slate-800">{{ player.stats.positive_messages - player.stats.negative_messages }}</td>
+                                <td class="mono-data px-4 py-4 text-lg font-bold text-sky-700" x-text="player.overall_points"></td>
+                                <td class="mono-data px-4 py-4 font-semibold text-slate-800" x-text="player.stats.commits"></td>
+                                <td class="mono-data px-4 py-4 font-semibold text-slate-800" x-text="player.stats.positive_messages - player.stats.negative_messages"></td>
                                 <td class="px-4 py-4">
                                     <div class="flex items-center gap-1.5">
-                                        {% for i in range(5) %}
-                                            {% if i < result_positive %}
-                                            <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" title="Positive mention">
+                                        <template x-for="i in 5" :key="i">
+                                            <span
+                                                class="inline-flex h-5 w-5 items-center justify-center rounded-full"
+                                                :class="{
+                                                    'bg-emerald-100 text-emerald-600': i <= Math.round(player.stats.positive_messages / Math.max(player.stats.positive_messages + player.stats.negative_messages, 1) * 5),
+                                                    'bg-rose-100 text-rose-600': i > Math.round(player.stats.positive_messages / Math.max(player.stats.positive_messages + player.stats.negative_messages, 1) * 5) && i <= Math.round((player.stats.positive_messages + player.stats.negative_messages) / Math.max(player.stats.positive_messages + player.stats.negative_messages, 1) * 5),
+                                                    'bg-slate-100 text-slate-500': i > Math.round((player.stats.positive_messages + player.stats.negative_messages) / Math.max(player.stats.positive_messages + player.stats.negative_messages, 1) * 5)
+                                                }"
+                                            >
                                                 <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                                                     <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.8" />
                                                     <circle cx="7.5" cy="8.2" r="1" fill="currentColor" />
                                                     <circle cx="12.5" cy="8.2" r="1" fill="currentColor" />
-                                                    <path d="M6.8 11.2c.85 1.15 1.94 1.72 3.2 1.72 1.26 0 2.35-.57 3.2-1.72" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                                                    <template x-if="i <= Math.round(player.stats.positive_messages / Math.max(player.stats.positive_messages + player.stats.negative_messages, 1) * 5)">
+                                                        <path d="M6.8 11.2c.85 1.15 1.94 1.72 3.2 1.72 1.26 0 2.35-.57 3.2-1.72" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                                                    </template>
+                                                    <template x-if="i > Math.round(player.stats.positive_messages / Math.max(player.stats.positive_messages + player.stats.negative_messages, 1) * 5) && i <= Math.round((player.stats.positive_messages + player.stats.negative_messages) / Math.max(player.stats.positive_messages + player.stats.negative_messages, 1) * 5)">
+                                                        <path d="M6.8 13.2c.85-1.15 1.94-1.72 3.2-1.72 1.26 0 2.35.57 3.2 1.72" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                                                    </template>
+                                                    <template x-if="i > Math.round((player.stats.positive_messages + player.stats.negative_messages) / Math.max(player.stats.positive_messages + player.stats.negative_messages, 1) * 5)">
+                                                        <path d="M7 12h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                                                    </template>
                                                 </svg>
                                             </span>
-                                            {% elif i < result_positive + result_negative %}
-                                            <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-rose-100 text-rose-600" title="Negative mention">
-                                                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                                                    <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.8" />
-                                                    <circle cx="7.5" cy="8.2" r="1" fill="currentColor" />
-                                                    <circle cx="12.5" cy="8.2" r="1" fill="currentColor" />
-                                                    <path d="M6.8 13.2c.85-1.15 1.94-1.72 3.2-1.72 1.26 0 2.35.57 3.2 1.72" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-                                                </svg>
-                                            </span>
-                                            {% else %}
-                                            <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-slate-500" title="Neutral mention">
-                                                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                                                    <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.8" />
-                                                    <circle cx="7.5" cy="8.2" r="1" fill="currentColor" />
-                                                    <circle cx="12.5" cy="8.2" r="1" fill="currentColor" />
-                                                    <path d="M7 12h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-                                                </svg>
-                                            </span>
-                                            {% endif %}
-                                        {% endfor %}
+                                        </template>
                                     </div>
                                 </td>
                             </tr>
-                            {% endfor %}
-                            {% if dashboard_players|length == 0 %}
-                            <tr class="bg-white/50">
+                            </template>
+                            <tr class="bg-white/50" x-show="players.length === 0">
                                 <td class="px-4 py-8 text-center text-sm text-slate-500" colspan="6">No leaderboard data available yet.</td>
                             </tr>
-                            {% endif %}
                         </tbody>
                     </table>
                 </div>

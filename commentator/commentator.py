@@ -98,9 +98,8 @@ COMMENTARY STYLE: {STYLE_MAPPING.get(style, STYLE_MAPPING["calm"])["description"
 
 CRITICAL RULES:
 1. Mention people BY NAME and describe the drama in broadcast-safe football terms
-2. Use football terms: howler, screamer, red card, yellow card, own goal, sending off, VAR check, ugly scenes
+2. Use mannerisms of football commentators but in places where they would say football terms, use appropriate discord/git terminology
 3. Match the energy to the style - calm is measured, poetic is flowery, super_angry is EXPLOSIVE
-4. For toxic content, use phrases like "ugly scenes", "lost their head", "seeing red", "straight red card offense"
 
 Output: 1-2 sentences, max 40 words. No asterisks or markdown."""
 
