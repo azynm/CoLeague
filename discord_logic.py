@@ -140,15 +140,13 @@ If nothing notable happened, use an empty list for highlights."""
 
 def get_repo_name(guild_id, discord_headers):
     global channels
-    if channels == 0:
-        r = requests.get(f"https://discord.com/api/v10/guilds/{guild_id}/channels", headers=discord_headers)
-        if r.status_code != 200:
-            return f"Error: Could not fetch channels. Is the bot in the server? (Code: {r.status_code})"
+    r = requests.get(f"https://discord.com/api/v10/guilds/{guild_id}/channels", headers=discord_headers)
+    if r.status_code != 200:
+        return f"Error: Could not fetch channels. Is the bot in the server? (Code: {r.status_code})"
 
-        #Filter for text channels and scrape messages
-        channels = r.json()
+    #Filter for text channels and scrape messages
+    channels = r.json()
     
-
     config_channel = next((c for c in channels if c['name'] == 'bot-internal-config'), None)
     
     if config_channel:
@@ -166,11 +164,13 @@ def create_storage_channel(guild_id, repo_name, discord_headers):
             "name": "bot-internal-config",
             "type": 0,
             "permission_overwrites": [
-                {"id": guild_id, "type": 0, "deny": "1024"} # Deny View Channel for @everyone (1024 is VIEW_CHANNEL)
+                {"id": guild_id, "type": 0} # Deny View Channel for @everyone (1024 is VIEW_CHANNEL)
             ]
         }
     new_chan = requests.post(f"https://discord.com/api/v10/guilds/{guild_id}/channels", headers=discord_headers, json=create_payload).json()
     
+    time.sleep(0.5)
+
     if 'id' in new_chan:
         # Success! Save the data.
         requests.post(f"https://discord.com/api/v10/channels/{new_chan['id']}/messages", 

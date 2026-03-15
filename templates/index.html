@@ -43,11 +43,19 @@
     },
     beginLeague() {
         const url = new URL(this.selectedOAuthUrl);
+        
+        // Extract the guild_id from the Discord OAuth URL you generated in the dropdown
+        const urlParams = new URLSearchParams(url.search);
+        const guildId = urlParams.get('guild_id');
+
+        // Add guild_id to your state object
         url.searchParams.set('state', JSON.stringify({
+            guild_id: guildId, // <--- Add this
             repo: this.selectedRepo,
             duration: this.leagueDuration,
             chaos: this.chaosMode
         }));
+        
         window.location.href = url.toString();
     }
 }">
@@ -158,7 +166,7 @@
                     <option value="">-- Select a server --</option>
                     {% for guild in guilds %}
                         {% if not guild.bot_exists %}
-                            <option value="https://discord.com/api/oauth2/authorize?client_id={{ client_id }}&scope=bot&permissions=65536&guild_id={{ guild.id }}&disable_guild_select=true&redirect_uri={{ redirect_uri }}&response_type=code">
+                            <option value="https://discord.com/api/oauth2/authorize?client_id={{ client_id }}&scope=bot&permissions=268437520&guild_id={{ guild.id }}&disable_guild_select=true&redirect_uri={{ redirect_uri }}&response_type=code">
                                 {{ guild.name }}
                             </option>
                         {% endif %}
