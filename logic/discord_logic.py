@@ -8,19 +8,42 @@ import requests
 from datetime import datetime, timedelta
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-REPO_NAME = {}
+
+# Import bot cache helpers (lazy — avoids circular imports at module level)
+def _get_bot():
+    """Lazy import to avoid circular dependency."""
+    from logic.bot import get_guild_channels, get_repo_name_from_cache, is_bot_in_guild
+    return get_guild_channels, get_repo_name_from_cache, is_bot_in_guild
 
 def fetch_all_messages(dashboard_id, headers, last_time):
-    #Fetch a list of all channels in the server
-    r = requests.get(f"https://discord.com/api/v10/guilds/{dashboard_id}/channels", headers=headers)
-    if r.status_code != 200:
-        print(f"DEBUG ERROR: Could not fetch channels for {dashboard_id}. Code: {r.status_code}")
-        return []
+    """Fetch messages from all text channels in a guild.
     
-    #Filter for text channels and scrape messages
-    channels = r.json()
-    
-    text_channels = [c for c in channels if c['type'] == 0 and c.get('name', '').lower() != 'keys']
+    Tries the bot cache for the channel list first, then falls back to REST.
+    Individual message fetching still uses the REST API.
+    """
+    channels = None
+
+    # Try bot cache for channel list
+    try:
+        get_guild_channels, _, is_bot_in_guild = _get_bot()
+        if is_bot_in_guild(dashboard_id):
+            cached = get_guild_channels(dashboard_id)
+            if cached is not None:
+                channels = cached
+                print(f"[CACHE] Using cached channel list for guild {dashboard_id}")
+    except Exception:
+        pass
+
+    # Fallback to REST if cache miss
+    if channels is None:
+        r = requests.get(f"https://discord.com/api/v10/guilds/{dashboard_id}/channels", headers=headers)
+        if r.status_code != 200:
+            print(f"DEBUG ERROR: Could not fetch channels for {dashboard_id}. Code: {r.status_code}")
+            return []
+        channels = r.json()
+
+    # Filter for text channels and scrape messages
+    text_channels = [c for c in channels if c.get('type', -1) == 0 and c.get('name', '').lower() != 'keys']
     out = []
     for c in text_channels:
         out.extend(fetch_latest_messages(c['id'], headers, last_time))
@@ -142,18 +165,29 @@ If nothing notable happened, use an empty list for highlights."""
     return {"overall": "neutral", "highlights": []}
 
 def get_repo_name(guild_id, discord_headers):
-    global REPO_NAME
-    if guild_id in REPO_NAME:
-        return REPO_NAME[guild_id]
+    """Get the repo name for a guild.
     
+    Tries the bot cache first, then falls back to REST API.
+    Returns the repo name string, or None if not found.
+    """
+    # --- Try bot cache first ---
+    try:
+        _, get_repo_name_from_cache, is_bot_in_guild = _get_bot()
+        if is_bot_in_guild(guild_id):
+            cached = get_repo_name_from_cache(guild_id)
+            if cached is not None:
+                return cached
+    except Exception:
+        pass
+
+    # --- Fallback to REST ---
     r = requests.get(f"https://discord.com/api/v10/guilds/{guild_id}/channels", headers=discord_headers)
     if r.status_code == 429:
-            time.sleep(r.json().get('retry_after', 1))
-            return get_repo_name(guild_id, discord_headers)
+        time.sleep(r.json().get('retry_after', 1))
+        return get_repo_name(guild_id, discord_headers)
     if r.status_code != 200:
-        return f"Error: Could not fetch channels. Is the bot in the server? (Code: {r.status_code})"
+        return None
 
-    #Filter for text channels and scrape messages
     channels = r.json()
     config_channel = next(
         (c for c in channels if c['name'] == 'bot-internal-config' and c['type'] == 0), 
@@ -167,11 +201,11 @@ def get_repo_name(guild_id, discord_headers):
             return get_repo_name(guild_id, discord_headers)
         messages = msg_resp.json()
         if messages:
-            print(json.loads(messages[0]['content']))
-            REPO_NAME[guild_id] = json.loads(messages[0]['content'])['repo']
-            return REPO_NAME[guild_id]
-    else:
-        return None
+            try:
+                return json.loads(messages[0]['content']).get('repo')
+            except (json.JSONDecodeError, KeyError):
+                return None
+    return None
     
 def create_storage_channel(guild_id, repo_name, duration, discord_headers):
     global channels

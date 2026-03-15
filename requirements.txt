@@ -7,6 +7,7 @@ cffi==2.0.0
 charset-normalizer==3.4.5
 click==8.3.1
 cryptography==46.0.5
+discord.py>=2.3.0
 elevenlabs==2.39.0
 fastapi==0.135.1
 Flask==3.1.3

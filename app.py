@@ -1,5 +1,6 @@
 from flask import Flask, redirect, url_for, session, request, render_template, Response, jsonify
 import os
+import logging
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
@@ -16,9 +17,17 @@ from logic.commentator_logic import determine_style, generate_script, generate_a
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 import time
-#import gunicorn
-#import elevenlabs
 import requests_cache
+
+# Background discord.py bot
+from logic.bot import (
+    start_bot, is_bot_ready, is_bot_in_guild,
+    get_guild_name, get_guild_channels,
+    get_repo_name_from_cache, detect_bots_in_guild,
+)
+
+# Configure logging so bot messages are visible
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(message)s")
 
 # Cache is stored in a local SQLite file 'discord_github_cache.sqlite'
 requests_cache.install_cache(
@@ -44,6 +53,10 @@ app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.secret_key = "bum4"
 app.config['UPLOAD_FOLDER'] = str(Path("static") / "uploads")
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
+
+# Start background Discord bot (daemon thread — won't block Flask)
+start_bot()
 
 # Global state for commentary caching
 commentary_history = {}  # {dashboard_id: [list of commentary entries]}
@@ -60,26 +73,57 @@ def index():
     if 'github_access_token' not in session:
         return render_template("login.html", step=1, discord_auth_url=DISCORD_AUTH_URL, github_auth_url=GITHUB_AUTH_URL)
 
-    #Get all the servers the user is in
+    if 'REPO_NAME' not in session:
+        session['REPO_NAME'] = {}
+
+    #Get all the servers the user is in (still uses user OAuth2 — this is
+    #the user's OWN guild list, which only the user token can fetch)
     user_servers = requests.get("https://discord.com/api/users/@me/guilds", headers={"Authorization": f"Bearer {session['discord_access_token']}"}).json()
     if not isinstance(user_servers, list):
         # Token expired or invalid - clear session and re-login
         session.clear()
         return redirect(url_for('index'))
 
+    bot_ready = is_bot_ready()
+
     #Make a list of all servers we can participate in
     servers = []
     for s in user_servers:
-        name = get_repo_name(s["id"], {"Authorization": f"Bot {BOT_TOKEN}"})
-        if name is not None:
-            print(name)
-            s["bot_exists"] = True
-            servers.append(s)
-        elif int(s['permissions']) & 0x20:
+        guild_id = s["id"]
+
+        # --- Bot cache path (no REST calls) ---
+        if bot_ready and is_bot_in_guild(guild_id):
+            # Bot is in this guild — read repo name from cache
+            repo = get_repo_name_from_cache(guild_id)
+            if repo is not None:
+                s["bot_exists"] = True
+                session['REPO_NAME'][guild_id] = repo
+                print(f"[CACHE] Guild {guild_id}: repo={repo}")
+                servers.append(s)
+                continue
+            else:
+                # Bot is in the guild but no config channel yet — still show
+                # the guild so the user can set it up
+                s["bot_exists"] = True
+                servers.append(s)
+                continue
+
+        # --- Fallback: bot not in guild ---
+        # Only show guilds where the user has MANAGE_SERVER permission
+        # so they can add the bot
+        if int(s.get('permissions', 0)) & 0x20:
+            s["bot_exists"] = False
             servers.append(s)
     
     #Show the page
-    return render_template("index.html", guilds=servers, username=session['username'], client_id=DISCORD_CLIENT_ID, redirect_uri=REDIRECT_URI) 
+    return render_template(
+        "index.html",
+        guilds=servers,
+        username=session['username'],
+        client_id=DISCORD_CLIENT_ID,
+        redirect_uri=REDIRECT_URI,
+        bot_available=bot_ready,
+    )
 
 #Discord callback page
 @app.route('/discord_callback')
@@ -140,21 +184,27 @@ def dashboard(dashboard_id):
     if 'discord_access_token' not in session or 'github_access_token' not in session:
         return redirect(url_for('index'))
 
-    #Setup headers
-    discord_headers = {"Authorization": f"Bearer {session['discord_access_token']}"}
+    # --- Try bot cache first for guild name ---
+    project_name = get_guild_name(dashboard_id)
 
-    project_name = dashboard_id
-    try:
-        guild_resp = requests.get(
-            f"https://discord.com/api/guilds/{dashboard_id}",
-            headers=discord_headers,
-            timeout=10,
-        )
-        if guild_resp.ok:
-            guild_data = guild_resp.json()
-            project_name = guild_data.get("name", dashboard_id)
-    except requests.RequestException:
+    if project_name is None:
+        # Fallback: bot not in this guild, use REST
         project_name = dashboard_id
+        try:
+            discord_headers = {"Authorization": f"Bearer {session['discord_access_token']}"}
+            guild_resp = requests.get(
+                f"https://discord.com/api/guilds/{dashboard_id}",
+                headers=discord_headers,
+                timeout=10,
+            )
+            if guild_resp.ok:
+                guild_data = guild_resp.json()
+                project_name = guild_data.get("name", dashboard_id)
+        except requests.RequestException:
+            project_name = dashboard_id
+
+    # Detect other bots in this guild (for display / awareness)
+    other_bots = detect_bots_in_guild(dashboard_id)
     
     leaderboard = get_leaderboard()
     last_updated = get_scores_last_updated()
@@ -165,6 +215,7 @@ def dashboard(dashboard_id):
         project_name=project_name,
         autoplay_commentary=session.get('autoplay_commentary', False),
         last_updated=last_updated,
+        other_bots=other_bots,
     )
 
 #Logout page
@@ -226,6 +277,9 @@ def settings():
 @app.route('/api/commentary-history/<dashboard_id>')
 def commentary_history_api(dashboard_id):
     """Return list of recent commentary entries (without audio bytes)."""
+    if 'discord_access_token' not in session or 'github_access_token' not in session:
+        return redirect(url_for('index'))
+    
     now = time.time()
     last_gen = last_generated.get(dashboard_id, 0)
 
@@ -339,4 +393,6 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port)
     '''
-    app.run(debug=True, port=5000)
+    # use_reloader=False is crucial — the reloader spawns a child process
+    # which would start a SECOND bot instance and cause token conflicts.
+    app.run(debug=True, port=5000, use_reloader=False)
