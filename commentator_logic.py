@@ -239,9 +239,12 @@ def generate_commentary_audio(events: dict, style: str = None) -> bytes:
 def collect_events(dashboard_id, discord_headers, github_headers, repo_name):
     now = datetime.now()
     last_time = now - timedelta(seconds=20)
-    
+    last_time_git = now - timedelta(seconds=60)    
+
     discord_messages = fetch_all_messages(dashboard_id, discord_headers, last_time)
-    github_data = get_detailed_github_data(repo_name, github_headers, last_time)
+    github_data = get_detailed_github_data(repo_name, github_headers, last_time_git)
+    
+    print(github_data)
 
     #Checks if there are new updates
     if len(discord_messages) > 0 or len(github_data) > 0:
