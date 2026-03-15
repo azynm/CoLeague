@@ -87,7 +87,8 @@ def index():
         bot_resp = requests.get("https://discord.com/api/users/@me/guilds", headers={"Authorization": f"Bot {BOT_TOKEN}"})
         if bot_resp.status_code == 429:
             print(f"[RATE LIMITED] bot guilds call, retry_after={bot_resp.json().get('retry_after', '?')}")
-            bot_server_ids = []
+            # Try to use stale cache
+            bot_server_ids = get_cached("bot_server_ids", allow_stale=True) or []
         elif not bot_resp.ok:
             return render_template("login.html", step=1, discord_auth_url=DISCORD_AUTH_URL, github_auth_url=GITHUB_AUTH_URL)
         else:
@@ -118,9 +119,9 @@ def index():
         print("[DISCORD API] GET /users/@me/guilds (user token) - index page load")
         user_resp = requests.get("https://discord.com/api/users/@me/guilds", headers={"Authorization": f"Bearer {session['discord_access_token']}"})
         if user_resp.status_code == 429:
-            # Rate limited - use empty list but don't nuke the session
+            # Rate limited - try stale cache first
             print(f"[RATE LIMITED] user guilds call, retry_after={user_resp.json().get('retry_after', '?')}")
-            user_servers = []
+            user_servers = get_cached(user_cache_key, allow_stale=True) or []
         elif user_resp.status_code == 401:
             # Token actually expired - clear session and re-login
             session.clear()
