@@ -457,10 +457,7 @@
         const mosaic = document.getElementById('mosaic');
         if (!mosaic) return;
         const tileSize = 20;
-        const gap = 4;
-        const totalSize = tileSize + gap;
-        const cols = Math.ceil(window.innerWidth / totalSize) + 2;
-        const rows = Math.ceil(window.innerHeight / totalSize) + 2;
+        const maxTiles = 60;
         const tileData = [];
         const activeTiles = new Set();
         const flickeringTiles = new Set();
@@ -468,8 +465,11 @@
         for (let i = 0; i < rows * cols; i++) {
             const tile = document.createElement('div');
             tile.className = 'mosaic-tile';
-            const col = i % cols;
-            const row = Math.floor(i / cols);
+            const x = Math.random() * window.innerWidth;
+            const y = Math.random() * window.innerHeight;
+            tile.style.position = 'absolute';
+            tile.style.left = x + 'px';
+            tile.style.top = y + 'px';
             tileData.push({
                 el: tile,
                 idx: i,
