@@ -1,10 +1,11 @@
-from flask import Flask, redirect, url_for, session, request, render_template, Response, jsonify
+from flask import Flask, redirect, url_for, session, request, render_template, Response, jsonify, abort
 import os
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
 import hashlib
 import requests
+import random
 from discord_logic import fetch_all_messages
 from commentator_logic import collect_events
 from settings_logic import _is_allowed_image, _profile_context
@@ -37,6 +38,82 @@ app.config['UPLOAD_FOLDER'] = str(Path("static") / "uploads")
 # Global state for commentary caching
 commentary_history = {}  # {dashboard_id: [list of commentary entries]}
 last_generated = {}      # {dashboard_id: timestamp of last generation}
+
+
+def _load_dummy_players():
+    players_path = Path(__file__).resolve().parent / "players.json"
+    try:
+        with players_path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+            if isinstance(data, list):
+                return data
+    except (OSError, json.JSONDecodeError):
+        pass
+    return None
+
+
+def _compute_wrapped_leaders(players):
+    if not players:
+        return {}
+
+    def top_by(stat_key):
+        return max(players, key=lambda p: p.get("stats", {}).get(stat_key, 0))
+
+    def low_by(stat_key):
+        return min(players, key=lambda p: p.get("stats", {}).get(stat_key, float("inf")))
+
+    mvp = max(players, key=lambda p: p.get("overall_points", 0))
+    biggest_contributor = top_by("commits")
+    review_boss = top_by("merge_approvals")
+    branch_master = top_by("branch_usage")
+    hype_machine = top_by("positive_messages")
+    fastest_responder = low_by("response_time_mins")
+    chaos_agent = top_by("spam_score")
+    salt_king = top_by("negative_messages")
+
+    return {
+        "mvp": {
+            "name": mvp.get("name", "Unknown"),
+            "value": mvp.get("overall_points", 0),
+            "label": "overall points",
+        },
+        "biggest_contributor": {
+            "name": biggest_contributor.get("name", "Unknown"),
+            "value": biggest_contributor.get("stats", {}).get("commits", 0),
+            "label": "commits",
+        },
+        "review_boss": {
+            "name": review_boss.get("name", "Unknown"),
+            "value": review_boss.get("stats", {}).get("merge_approvals", 0),
+            "label": "merge approvals",
+        },
+        "branch_master": {
+            "name": branch_master.get("name", "Unknown"),
+            "value": branch_master.get("stats", {}).get("branch_usage", 0),
+            "label": "branch usages",
+        },
+        "hype_machine": {
+            "name": hype_machine.get("name", "Unknown"),
+            "value": hype_machine.get("stats", {}).get("positive_messages", 0),
+            "label": "positive messages",
+        },
+        "fastest_responder": {
+            "name": fastest_responder.get("name", "Unknown"),
+            "value": fastest_responder.get("stats", {}).get("response_time_mins", 0),
+            "label": "minute response time",
+        },
+        "chaos_agent": {
+            "name": chaos_agent.get("name", "Unknown"),
+            "value": chaos_agent.get("stats", {}).get("spam_score", 0),
+            "label": "spam score",
+        },
+        "salt_king": {
+            "name": salt_king.get("name", "Unknown"),
+            "value": salt_king.get("stats", {}).get("negative_messages", 0),
+            "label": "negative messages",
+        },
+    }
+
 #Home screen
 @app.route('/')
 def index():
@@ -138,7 +215,7 @@ def dashboard(dashboard_id):
     except requests.RequestException:
         project_name = dashboard_id
     
-    leaderboard = get_leaderboard()
+    leaderboard = _load_dummy_players() or get_leaderboard()
     last_updated = get_scores_last_updated()
 
     return render_template(
@@ -307,11 +384,43 @@ def github_repos():
 @app.route('/api/leaderboard')
 def leaderboard_api():
     """Return the current leaderboard with scores."""
-    leaderboard = get_leaderboard()
+    leaderboard = _load_dummy_players() or get_leaderboard()
     return jsonify({
         "players": leaderboard,
         "last_updated": get_scores_last_updated(),
     })
+
+
+@app.route('/wrapped/<int:user_id>')
+def wrapped(user_id):
+    players = _load_dummy_players()
+    if players is None:
+        abort(500, description="Unable to load player data")
+
+    user = next((p for p in players if p.get("id") == user_id), None)
+    if not user:
+        abort(404, description="User not found")
+
+    leaders = _compute_wrapped_leaders(players)
+    last_spotlight_id = session.get("last_spotlight_id")
+    spotlight_candidates = players
+    if len(players) > 1 and last_spotlight_id is not None:
+        filtered = [p for p in players if p.get("id") != last_spotlight_id]
+        if filtered:
+            spotlight_candidates = filtered
+
+    spotlight_player = random.choice(spotlight_candidates)
+    session["last_spotlight_id"] = spotlight_player.get("id")
+
+    return_to = request.args.get("return_to", "")
+    if not return_to.startswith("/dashboard/"):
+        referrer = request.referrer or ""
+        if "/dashboard/" in referrer:
+            return_to = referrer
+        else:
+            return_to = url_for("index")
+
+    return render_template("wrapped.html", user=user, leaders=leaders, spotlight_player=spotlight_player, return_url=return_to)
 
 
 #Actually starts web server

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>CoLeague Wrapped - League Edition</title>
+	<script src="https://cdn.tailwindcss.com"></script>
+	<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+	<script defer src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+	<style>
+		[x-cloak] { display: none !important; }
+
+		.wrapped-shell {
+			width: min(96vw, 860px);
+			height: min(92vh, 760px);
+			border-radius: 1.25rem;
+			overflow: hidden;
+			position: relative;
+			box-shadow: 0 28px 80px rgba(15, 23, 42, 0.45);
+		}
+
+		.slide-enter-next {
+			animation: slideEnterNext 420ms ease both;
+		}
+
+		.slide-enter-prev {
+			animation: slideEnterPrev 420ms ease both;
+		}
+
+		@keyframes slideEnterNext {
+			from {
+				opacity: 0;
+				transform: translateX(24px) scale(0.99);
+			}
+			to {
+				opacity: 1;
+				transform: translateX(0) scale(1);
+			}
+		}
+
+		@keyframes slideEnterPrev {
+			from {
+				opacity: 0;
+				transform: translateX(-24px) scale(0.99);
+			}
+			to {
+				opacity: 1;
+				transform: translateX(0) scale(1);
+			}
+		}
+	</style>
+</head>
+<body class="h-screen w-screen overflow-hidden bg-slate-900 text-white flex justify-center items-center" style="font-family: 'Space Grotesk', sans-serif;">
+	<div
+		class="wrapped-shell cursor-pointer select-none"
+		x-data="{
+			slide: 1,
+			maxSlides: 5,
+			direction: 1,
+			next() {
+				this.direction = 1;
+				this.slide = this.slide < this.maxSlides ? this.slide + 1 : 1;
+			},
+			prev() {
+				this.direction = -1;
+				this.slide = this.slide > 1 ? this.slide - 1 : this.maxSlides;
+			},
+			handleTap(event) {
+				const rect = event.currentTarget.getBoundingClientRect();
+				const x = event.clientX - rect.left;
+				if (x < rect.width / 2) {
+					this.prev();
+				} else {
+					this.next();
+				}
+			}
+		}"
+		@click="handleTap($event)"
+		x-effect="if (slide === 5 && !window.__wrappedConfettiDone) { if (typeof confetti === 'function') { confetti({ particleCount: 180, spread: 120, origin: { y: 0.65 } }); } window.__wrappedConfettiDone = true; } if (slide !== 5) { window.__wrappedConfettiDone = false; }"
+	>
+		<div class="pointer-events-none absolute inset-x-4 top-4 z-30">
+			<div class="flex gap-2">
+				<template x-for="idx in maxSlides" :key="idx">
+					<div class="h-1.5 flex-1 overflow-hidden rounded-full bg-white/30">
+						<div
+							class="h-full rounded-full bg-white transition-all duration-500"
+							:style="idx <= slide ? 'width: 100%' : 'width: 0%'"
+						></div>
+					</div>
+				</template>
+			</div>
+		</div>
+
+		<section x-cloak x-show="slide === 1" class="absolute inset-0 bg-gradient-to-br from-violet-600 via-purple-600 to-blue-600 p-8 md:p-12" :class="direction === 1 ? 'slide-enter-next' : 'slide-enter-prev'">
+			<div class="flex h-full flex-col justify-between">
+				<p class="text-sm uppercase tracking-[0.35em] text-white/80" style="font-family: 'JetBrains Mono', monospace;">CoLeague Wrapped</p>
+				<div class="space-y-6">
+					<h1 class="text-4xl font-bold leading-tight md:text-6xl">Season Highlights</h1>
+					<p class="max-w-xl text-xl text-white/90 md:text-2xl">Not just your stats. This is who dominated every category.</p>
+					<div class="rounded-2xl bg-white/15 p-4 backdrop-blur-sm">
+						<p class="text-sm uppercase tracking-wider text-violet-100">MVP</p>
+						<p class="mt-1 text-2xl font-bold md:text-3xl">{{ leaders.mvp.name }}</p>
+						<p class="text-violet-100">{{ leaders.mvp.value }} {{ leaders.mvp.label }}</p>
+					</div>
+				</div>
+				<p class="text-sm text-white/80">Tap left for previous and right for next</p>
+			</div>
+		</section>
+
+		<section x-cloak x-show="slide === 2" class="absolute inset-0 bg-pink-600 p-8 md:p-12" :class="direction === 1 ? 'slide-enter-next' : 'slide-enter-prev'">
+			<div class="flex h-full flex-col justify-between">
+				<div>
+					<p class="text-sm uppercase tracking-[0.3em] text-pink-100" style="font-family: 'JetBrains Mono', monospace;">Discord Vibe Check</p>
+					<h2 class="mt-3 text-3xl font-bold md:text-5xl">Chat legends and chaos agents</h2>
+				</div>
+				<div class="relative rounded-2xl bg-white/15 p-6 backdrop-blur-sm">
+					<span class="absolute -right-3 -top-3 rotate-6 rounded-full bg-slate-900 px-4 py-2 text-xs font-bold uppercase tracking-wider text-amber-300 shadow-lg md:text-sm">League Pulse</span>
+					<div class="grid grid-cols-2 gap-4 text-center md:gap-8">
+						<div>
+							<p class="text-sm uppercase tracking-wider text-pink-100">Hype Machine</p>
+							<p class="mt-2 text-xl font-bold md:text-3xl">{{ leaders.hype_machine.name }}</p>
+							<p class="mt-2 text-4xl font-extrabold md:text-6xl">{{ leaders.hype_machine.value }}</p>
+						</div>
+						<div>
+							<p class="text-sm uppercase tracking-wider text-pink-100">Salt King</p>
+							<p class="mt-2 text-xl font-bold md:text-3xl">{{ leaders.salt_king.name }}</p>
+							<p class="mt-2 text-4xl font-extrabold md:text-6xl">{{ leaders.salt_king.value }}</p>
+						</div>
+					</div>
+				</div>
+				<p class="text-sm text-pink-100">Most positive and most negative message totals across the league.</p>
+			</div>
+		</section>
+
+		<section x-cloak x-show="slide === 3" class="absolute inset-0 bg-emerald-600 p-8 md:p-12" :class="direction === 1 ? 'slide-enter-next' : 'slide-enter-prev'">
+			<div class="flex h-full flex-col justify-between">
+				<div>
+					<p class="text-sm uppercase tracking-[0.3em] text-emerald-100" style="font-family: 'JetBrains Mono', monospace;">Code Leaderboard</p>
+					<h2 class="mt-3 text-3xl font-bold md:text-5xl">Biggest contributor and branch master</h2>
+				</div>
+				<div class="grid gap-5 md:grid-cols-2">
+					<div class="rounded-2xl bg-black/20 p-6">
+						<p class="text-sm uppercase tracking-wider text-emerald-100">Biggest Contributor</p>
+						<p class="mt-2 text-2xl font-bold md:text-3xl">{{ leaders.biggest_contributor.name }}</p>
+						<p class="mt-2 text-5xl font-black md:text-7xl">{{ leaders.biggest_contributor.value }}</p>
+					</div>
+					<div class="rounded-2xl bg-black/20 p-6">
+						<p class="text-sm uppercase tracking-wider text-emerald-100">Branch Master</p>
+						<p class="mt-2 text-2xl font-bold md:text-3xl">{{ leaders.branch_master.name }}</p>
+						<p class="mt-2 text-5xl font-black md:text-7xl">{{ leaders.branch_master.value }}</p>
+					</div>
+				</div>
+				<p class="text-sm text-emerald-100">Who shipped the most code and who branched like a maniac.</p>
+			</div>
+		</section>
+
+		<section x-cloak x-show="slide === 4" class="absolute inset-0 bg-amber-600 p-8 md:p-12 text-slate-900" :class="direction === 1 ? 'slide-enter-next' : 'slide-enter-prev'">
+			<div class="flex h-full flex-col justify-between">
+				<div>
+					<p class="text-sm uppercase tracking-[0.3em] text-amber-900" style="font-family: 'JetBrains Mono', monospace;">Review and Tempo</p>
+					<h2 class="mt-3 text-3xl font-bold md:text-5xl">Who reviewed most and who responded fastest</h2>
+				</div>
+				<div class="space-y-4">
+					<div class="rounded-2xl bg-white/60 p-6">
+						<p class="text-sm uppercase tracking-wider text-amber-900">Review Boss</p>
+						<p class="mt-2 text-2xl font-bold md:text-3xl">{{ leaders.review_boss.name }}</p>
+						<p class="mt-2 text-5xl font-extrabold md:text-6xl">{{ leaders.review_boss.value }} approvals</p>
+					</div>
+					<div class="rounded-2xl bg-white/60 p-6">
+						<p class="text-sm uppercase tracking-wider text-amber-900">Fastest Responder</p>
+						<p class="mt-2 text-2xl font-bold md:text-3xl">{{ leaders.fastest_responder.name }}</p>
+						<p class="mt-2 text-5xl font-extrabold md:text-6xl">{{ leaders.fastest_responder.value }} min</p>
+					</div>
+				</div>
+				<p class="text-sm text-amber-900">PR throughput and response speed leaders for this season.</p>
+			</div>
+		</section>
+
+		<section x-cloak x-show="slide === 5" class="absolute inset-0 bg-purple-700 p-8 md:p-12" :class="direction === 1 ? 'slide-enter-next' : 'slide-enter-prev'">
+			<div class="flex h-full flex-col justify-between">
+				<div>
+					<p class="text-sm uppercase tracking-[0.3em] text-purple-100" style="font-family: 'JetBrains Mono', monospace;">Final Results</p>
+					<h2 class="mt-3 text-3xl font-bold md:text-5xl">Award Cabinet</h2>
+				</div>
+				<div class="grid gap-3 rounded-2xl bg-white/15 p-5 backdrop-blur-sm md:grid-cols-2">
+					<div class="rounded-xl bg-black/20 p-4">
+						<p class="text-xs uppercase tracking-wider text-purple-100">MVP</p>
+						<p class="text-lg font-bold">{{ leaders.mvp.name }}</p>
+					</div>
+					<div class="rounded-xl bg-black/20 p-4">
+						<p class="text-xs uppercase tracking-wider text-purple-100">Chaos Agent</p>
+						<p class="text-lg font-bold">{{ leaders.chaos_agent.name }}</p>
+						<p class="text-sm text-purple-100">{{ leaders.chaos_agent.value }} spam score</p>
+					</div>
+					<div class="rounded-xl bg-black/20 p-4 md:col-span-2">
+						<p class="text-xs uppercase tracking-wider text-purple-100">Spotlight Player</p>
+						<p class="text-lg font-bold">{{ spotlight_player.name }}</p>
+						<p class="text-sm text-purple-100">{{ spotlight_player.stats.commits }} commits | {{ spotlight_player.stats.positive_messages }} positive messages</p>
+					</div>
+				</div>
+				<div>
+					<button
+						type="button"
+						class="rounded-xl bg-white px-5 py-3 text-sm font-bold text-purple-700 shadow-lg transition hover:bg-purple-100"
+						@click.stop="window.location.href='{{ return_url }}'"
+					>
+						Return to Leaderboard
+					</button>
+				</div>
+			</div>
+		</section>
+	</div>
+</body>
+</html>
