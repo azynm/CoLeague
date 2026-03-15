@@ -204,22 +204,39 @@ def github_callback():
 #Dashboard page for each league/server
 @app.route('/dashboard/<dashboard_id>')
 def dashboard(dashboard_id):
+    # Redirect to login if not authenticated
+    if 'discord_access_token' not in session or 'github_access_token' not in session:
+        return redirect(url_for('index'))
+
     #Setup headers
     discord_headers = {"Authorization": f"Bot {BOT_TOKEN}"}
     github_headers = {"Authorization": f"token {session['github_access_token']}"}
     now = datetime.now()
     last_time = now - timedelta(hours=3)
-    
+
     #Fetch all data
     github_data = get_detailed_github_data("azynm/blahajathon", github_headers, last_time)
     discord_data = fetch_all_messages(dashboard_id, discord_headers, last_time)
     
     print(github_data, discord_data) 
+
+    project_name = dashboard_id
+    try:
+        guild_resp = requests.get(
+            f"https://discord.com/api/guilds/{dashboard_id}",
+            headers=discord_headers,
+            timeout=10,
+        )
+        if guild_resp.ok:
+            guild_data = guild_resp.json()
+            project_name = guild_data.get("name", dashboard_id)
+    except requests.RequestException:
+        project_name = dashboard_id
     
     with open('players.json', 'r') as file:
         data = json.load(file)
 
-    return render_template("dashboard.html", players=data)
+    return render_template("dashboard.html", players=data, project_name=project_name)
 
 
 
@@ -340,6 +357,33 @@ def commentary_latest(dashboard_id):
 
     latest = history[-1]
     return Response(latest["audio"], mimetype="audio/mpeg")
+
+
+@app.route('/api/github-repos')
+def github_repos():
+    """Fetch the user's GitHub repositories."""
+    if 'github_access_token' not in session:
+        return json.dumps({"error": "Not authenticated with GitHub"}), 401
+
+    github_headers = {"Authorization": f"token {session['github_access_token']}"}
+    response = requests.get(
+        "https://api.github.com/user/repos?per_page=100&sort=updated",
+        headers=github_headers
+    )
+
+    if response.status_code != 200:
+        return json.dumps({"error": "Failed to fetch repos"}), 500
+
+    repos = response.json()
+    # Return simplified repo data
+    return json.dumps([{
+        "id": repo["id"],
+        "name": repo["name"],
+        "full_name": repo["full_name"],
+        "private": repo["private"],
+        "description": repo.get("description", ""),
+        "url": repo["html_url"]
+    } for repo in repos])
 
 
 @app.route('/api/leaderboard')
