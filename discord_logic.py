@@ -79,7 +79,7 @@ def analyse_sentiment(messages):
     if not messages:
         return {"overall": "neutral", "highlights": []}
 
-    conversation = "\n".join(f"{m['author']}: {m['content']}" for m in messages)
+    conversation = "\n".join(f"{m['author']}: {m['content']} - {m['reactions']}" for m in messages)
 
     prompt = f"""Analyze these Discord messages from a software development team.
 

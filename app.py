@@ -5,14 +5,14 @@ load_dotenv(override=True)
 
 import hashlib
 import requests
-from discord_logic import fetch_all_messages, analyse_sentiment
-from commentator.commentator import generate_commentary_audio
+from discord_logic import fetch_all_messages
+from commentator_logic import collect_events
 from settings_logic import _is_allowed_image, _profile_context
 from github_logic import get_detailed_github_data
 import json
 from pathlib import Path
 import uuid
-from commentator.commentator import determine_style, generate_script, generate_audio_from_text
+from commentator_logic import determine_style, generate_script, generate_audio_from_text
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 import time
@@ -36,80 +36,6 @@ app.config['UPLOAD_FOLDER'] = str(Path("static") / "uploads")
 # Global state for commentary caching
 commentary_history = {}  # {dashboard_id: [list of commentary entries]}
 last_generated = {}      # {dashboard_id: timestamp of last generation}
-last_message_hash = {}   # {dashboard_id: hash of last messages to detect changes}
-
-
-def collect_discord_events(dashboard_id, github_token=None):
-    """
-    Fetch Discord messages and GitHub data, transform into events dict for commentator.
-    Returns (events_dict, messages_hash) tuple, or (None, None) on failure.
-    """
-    discord_headers = {"Authorization": f"Bot {BOT_TOKEN}"}
-    now = datetime.now()
-    last_time = now - timedelta(hours=3)
-
-    # Fetch Discord messages
-    discord_messages = fetch_all_messages(dashboard_id, discord_headers, last_time)
-    if isinstance(discord_messages, str):  # Error message
-        print(f"Discord fetch error: {discord_messages}")
-        return None, None
-
-    # Create hash to detect changes
-    msg_str = "|".join(f"{m['author']}:{m['content']}:{m['timestamp']}" for m in discord_messages)
-    msg_hash = hashlib.md5(msg_str.encode()).hexdigest()
-
-    # Analyze sentiment
-    sentiment = analyse_sentiment(discord_messages)
-    print(f"Discord analysis — sentiment: {sentiment}, messages: {len(discord_messages)}")
-
-    # Build events dict for commentator
-    events = {
-        "discord_sentiment": sentiment["overall"],
-        "discord_highlights": sentiment["highlights"],
-        "discord_spam_count": 0,
-        "recent_commits": [],
-        "pull_requests_merged": 0,
-    }
-
-    # Add GitHub data if token available
-    if github_token:
-        github_headers = {"Authorization": f"token {github_token}"}
-        github_data = get_detailed_github_data("azynm/blahajathon", github_headers, last_time)
-
-        for item in github_data:
-            if item["type"] == "commit":
-                events["recent_commits"].append({
-                    "author": item["author"],
-                    "message": item["message"],
-                    "branch": "feature",  # Default, could parse from message
-                    "lines_changed": 50,  # Placeholder
-                })
-            elif item["type"] == "merge":
-                # Check if merged to main
-                events["recent_commits"].append({
-                    "author": item["author"],
-                    "message": item["message"],
-                    "branch": "main" if "main" in item["message"].lower() else "feature",
-                    "lines_changed": 100,
-                })
-            elif item["type"] == "merge_request":
-                events["pull_requests_merged"] += 1
-                # Check if merged to main branch
-                if item.get("target_branch") == "main":
-                    events["recent_commits"].append({
-                        "author": item["author"],
-                        "message": item["title"],
-                        "branch": "main",
-                        "lines_changed": 100,
-                    })
-
-        print(f"GitHub data — commits: {len(events['recent_commits'])}, PRs merged: {events['pull_requests_merged']}")
-
-    # Limit commits to avoid prompt being too long
-    events["recent_commits"] = events["recent_commits"][:5]
-
-    return events, msg_hash
-
 #Home screen
 @app.route('/')
 def index():
@@ -253,12 +179,12 @@ def commentary_history_api(dashboard_id):
 
     # Regenerate if >60s since last generation AND messages have changed
     if now - last_gen > 20:
-        github_token = session.get('github_access_token')
-        events, msg_hash = collect_discord_events(dashboard_id, github_token)
+        discord_headers = {"Authorization": f"Bot {BOT_TOKEN}"}
+        github_headers = {"Authorization": f"token {session['github_access_token']}"}
+        events = collect_events(dashboard_id, discord_headers, github_headers, "azynm/CoLeague")
 
         # Only generate if we got events AND messages have changed
-        if events and msg_hash != last_message_hash.get(dashboard_id):
-            print(f"DEBUG: Messages changed! Old hash: {last_message_hash.get(dashboard_id)}, New hash: {msg_hash}")
+        if events is not None:
             style = determine_style(events)
             script = generate_script(events, style=style)
             audio = generate_audio_from_text(script, style=style)
@@ -279,10 +205,9 @@ def commentary_history_api(dashboard_id):
                 })
                 commentary_history[dashboard_id] = commentary_history[dashboard_id][-10:]
                 last_generated[dashboard_id] = timestamp
-                last_message_hash[dashboard_id] = msg_hash
         else:
             print(f"DEBUG: No new messages, skipping commentary generation")
-            last_generated[dashboard_id] = now  # Update timestamp to prevent checking again immediately
+            last_generated[dashboard_id] = now
 
     history = commentary_history.get(dashboard_id, [])
     # Return without audio bytes
