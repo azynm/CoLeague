@@ -83,45 +83,8 @@
             neutralSlots(player) {
                 const neutral = 5 - this.positiveSlots(player) - this.negativeSlots(player);
                 return Math.max(0, neutral);
-            },
-            async fetchHistory() {
-                if (this.isFetching) return;
-                this.isFetching = true;
-                try {
-                    const response = await fetch('/api/commentary-history/{{ request.view_args.dashboard_id }}');
-                    if (response.ok) {
-                        const newHistory = await response.json();
-                        const latestNew = newHistory.length > 0 ? newHistory[newHistory.length - 1] : null;
-                        this.commentaryHistory = newHistory;
-                        if (latestNew && latestNew.timestamp) {
-                            this.lastUpdated = new Date(latestNew.timestamp * 1000).toLocaleString();
-                        }
-                        // Autoplay if enabled and there's a new entry we haven't seen
-                        if (this.autoplay && latestNew && latestNew.id !== this.lastSeenEntryId) {
-                            this.lastSeenEntryId = latestNew.id;
-                            this.playCommentary(latestNew.id);
-                        } else if (latestNew && !this.lastSeenEntryId) {
-                            this.lastSeenEntryId = latestNew.id;
-                        }
-                    }
-                } catch (e) {
-                    console.error('Commentary fetch failed:', e);
-                }
-                await this.fetchLeaderboard();
-                this.isFetching = false;
-                this.countdown = 20;
-            }
-        }"
+            }"
         x-init="
-            fetchHistory();
-            setInterval(() => {
-                if (!isFetching) {
-                    countdown--;
-                    if (countdown <= 0) {
-                        fetchHistory();
-                    }
-                }
-            }, 1000);
             document.getElementById('commentary-audio').addEventListener('ended', () => {
                 isPlaying = false;
                 currentlyPlaying = null;
