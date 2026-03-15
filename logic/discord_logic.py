@@ -8,13 +8,15 @@ import requests
 from datetime import datetime, timedelta
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+REPO_NAME = {}
 
 def fetch_all_messages(dashboard_id, headers, last_time):
     #Fetch a list of all channels in the server
     r = requests.get(f"https://discord.com/api/v10/guilds/{dashboard_id}/channels", headers=headers)
     if r.status_code != 200:
-        return f"Error: Could not fetch channels. Is the bot in the server? (Code: {r.status_code})"
-
+        print(f"DEBUG ERROR: Could not fetch channels for {dashboard_id}. Code: {r.status_code}")
+        return []
+    
     #Filter for text channels and scrape messages
     channels = r.json()
     
@@ -41,9 +43,12 @@ def fetch_latest_messages(channel_id, headers, since_datetime):
         
         #Format data
         data = r.json()
-        if not data:
-            break 
+        if not data or not isinstance(data, list): # Check if data is actually a list
+            break
         for m in data:
+            author_data = m.get('author')
+            if not author_data or not isinstance(author_data, dict):
+                continue
             all_messages.append({
                 "author": m['author']['username'],
                 "content": m['content'],
@@ -56,7 +61,7 @@ def fetch_latest_messages(channel_id, headers, since_datetime):
             break
 
         #Prepare for next loop
-        after_id = data[0]['id'] 
+        after_id = data[-1]['id'] 
 
     return all_messages
     
@@ -137,6 +142,10 @@ If nothing notable happened, use an empty list for highlights."""
     return {"overall": "neutral", "highlights": []}
 
 def get_repo_name(guild_id, discord_headers):
+    global REPO_NAME
+    if guild_id in REPO_NAME:
+        return REPO_NAME[guild_id]
+    
     r = requests.get(f"https://discord.com/api/v10/guilds/{guild_id}/channels", headers=discord_headers)
     if r.status_code == 429:
             time.sleep(r.json().get('retry_after', 1))
@@ -146,22 +155,22 @@ def get_repo_name(guild_id, discord_headers):
 
     #Filter for text channels and scrape messages
     channels = r.json()
-    
     config_channel = next((c for c in channels if c['name'] == 'bot-internal-config'), None)
 
     if config_channel:
-        # Fetch the first message in that channel
         msg_resp = requests.get(f"https://discord.com/api/v10/channels/{config_channel['id']}/messages?limit=1", headers=discord_headers)
         if msg_resp.status_code == 429:
             time.sleep(msg_resp.json().get('retry_after', 1))
             return get_repo_name(guild_id, discord_headers)
         messages = msg_resp.json()
         if messages:
-            return messages[0]['content']
+            print(json.loads(messages[0]['content']))
+            REPO_NAME[guild_id] = json.loads(messages[0]['content'])['repo']
+            return REPO_NAME[guild_id]
     else:
         return None
     
-def create_storage_channel(guild_id, repo_name, discord_headers):
+def create_storage_channel(guild_id, repo_name, duration, discord_headers):
     global channels
     create_payload = {
             "name": "bot-internal-config",
@@ -175,7 +184,7 @@ def create_storage_channel(guild_id, repo_name, discord_headers):
     time.sleep(0.5)
 
     if 'id' in new_chan:
-        data = {"repo": repo_name}
+        data = {"repo": repo_name, "duration": duration}
         # Success! Save the data.
         requests.post(f"https://discord.com/api/v10/channels/{new_chan['id']}/messages", 
                         headers=discord_headers, json={"content": json.dumps(data)})
