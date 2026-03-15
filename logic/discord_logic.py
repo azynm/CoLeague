@@ -6,20 +6,92 @@ import time
 import json
 import requests
 from datetime import datetime, timedelta
+from pathlib import Path
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+USE_DUMMY_MESSAGES = os.getenv("USE_DUMMY_MESSAGES", "false").lower() == "true"
 REPO_NAME = {}
 
+# Dummy message state tracking
+_dummy_message_index = 0
+_dummy_scenario = "messages"  # Can be: messages, positive_burst, negative_tension, toxic_heated, calm_progress, spam_flood
+
+def load_dummy_messages(scenario=None):
+    """Load messages from the dummy JSON file."""
+    global _dummy_scenario
+    if scenario:
+        _dummy_scenario = scenario
+
+    dummy_path = Path(__file__).parent.parent / "data" / "dummy_messages.json"
+    try:
+        with open(dummy_path, "r") as f:
+            data = json.load(f)
+
+        if _dummy_scenario == "messages":
+            msgs = data.get("messages", [])
+        else:
+            msgs = data.get("scenarios", {}).get(_dummy_scenario, [])
+
+        # Filter out comment entries used for readability in the JSON
+        return [m for m in msgs if "author" in m]
+    except FileNotFoundError:
+        print(f"WARNING: Dummy messages file not found at {dummy_path}")
+        return []
+    except json.JSONDecodeError as e:
+        print(f"WARNING: Failed to parse dummy messages: {e}")
+        return []
+
+def fetch_dummy_messages(since_datetime=None, batch_size=5):
+    """
+    Fetch a batch of dummy messages, simulating incremental updates.
+    Returns `batch_size` messages starting from the current index.
+    """
+    global _dummy_message_index
+
+    all_messages = load_dummy_messages()
+    if not all_messages:
+        return []
+
+    # Get the next batch of messages
+    start = _dummy_message_index
+    end = min(start + batch_size, len(all_messages))
+    batch = all_messages[start:end]
+
+    # Update index for next call (loop back to start if at end)
+    _dummy_message_index = end if end < len(all_messages) else 0
+
+    return batch
+
+def set_dummy_scenario(scenario):
+    """Set which scenario to use for dummy messages."""
+    global _dummy_scenario, _dummy_message_index
+    valid_scenarios = ["messages", "positive_burst", "negative_tension", "toxic_heated", "calm_progress", "spam_flood"]
+    if scenario in valid_scenarios:
+        _dummy_scenario = scenario
+        _dummy_message_index = 0
+        return True
+    return False
+
+def reset_dummy_index():
+    """Reset the dummy message index to start from the beginning."""
+    global _dummy_message_index
+    _dummy_message_index = 0
+
 def fetch_all_messages(dashboard_id, headers, last_time):
+    # Use dummy messages if enabled (avoids Discord API rate limits)
+    if USE_DUMMY_MESSAGES:
+        print("DEBUG: Using dummy messages (USE_DUMMY_MESSAGES=true)")
+        return fetch_dummy_messages(last_time)
+
     #Fetch a list of all channels in the server
     r = requests.get(f"https://discord.com/api/v10/guilds/{dashboard_id}/channels", headers=headers)
     if r.status_code != 200:
         print(f"DEBUG ERROR: Could not fetch channels for {dashboard_id}. Code: {r.status_code}")
         return []
-    
+
     #Filter for text channels and scrape messages
     channels = r.json()
-    
+
     text_channels = [c for c in channels if c['type'] == 0 and c.get('name', '').lower() != 'keys']
     out = []
     for c in text_channels:

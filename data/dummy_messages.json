@@ -1,0 +1,320 @@
+{
+  "messages": [
+
+    {"_comment": "=== BATCH 1: CALM — productive, positive vibes ==="},
+
+    {
+      "author": "azynm",
+      "content": "Morning team, just pushed the initial API scaffold. Looking clean",
+      "timestamp": "2026-03-15T09:00:00.000Z",
+      "reactions": [{"emoji": {"name": "thumbsup"}, "count": 2}]
+    },
+    {
+      "author": "lackshaj",
+      "content": "Nice, frontend wireframes are done too. Ready for integration",
+      "timestamp": "2026-03-15T09:02:00.000Z",
+      "reactions": [{"emoji": {"name": "fire"}, "count": 1}]
+    },
+    {
+      "author": "sophacode",
+      "content": "Database schema looks good, all migrations passing",
+      "timestamp": "2026-03-15T09:05:00.000Z",
+      "reactions": []
+    },
+    {
+      "author": "aadideepchand20",
+      "content": "Solid start everyone. Let's keep this momentum going",
+      "timestamp": "2026-03-15T09:08:00.000Z",
+      "reactions": [{"emoji": {"name": "raised_hands"}, "count": 3}]
+    },
+    {
+      "author": "azynm",
+      "content": "Agreed, we're in a great spot. Steady progress",
+      "timestamp": "2026-03-15T09:10:00.000Z",
+      "reactions": []
+    },
+
+    {"_comment": "=== BATCH 2: POETIC — tension building, frustration creeping in ==="},
+
+    {
+      "author": "lackshaj",
+      "content": "Ugh the auth module keeps failing. This is getting really frustrating",
+      "timestamp": "2026-03-15T09:30:00.000Z",
+      "reactions": [{"emoji": {"name": "disappointed"}, "count": 2}]
+    },
+    {
+      "author": "aadideepchand20",
+      "content": "I told you we should have used a different library, this one sucks",
+      "timestamp": "2026-03-15T09:32:00.000Z",
+      "reactions": []
+    },
+    {
+      "author": "sophacode",
+      "content": "The deadline is creeping up and we're falling behind. Not great",
+      "timestamp": "2026-03-15T09:35:00.000Z",
+      "reactions": [{"emoji": {"name": "cold_sweat"}, "count": 3}]
+    },
+    {
+      "author": "azynm",
+      "content": "Team Alpha already has their demo working. We need to pick it up",
+      "timestamp": "2026-03-15T09:37:00.000Z",
+      "reactions": [{"emoji": {"name": "eyes"}, "count": 2}]
+    },
+    {
+      "author": "lackshaj",
+      "content": "Nothing is working the way it should. I'm losing hope honestly",
+      "timestamp": "2026-03-15T09:40:00.000Z",
+      "reactions": [{"emoji": {"name": "sob"}, "count": 4}]
+    },
+
+    {"_comment": "=== BATCH 3: SUPER ANGRY — toxic, profane, full blowup ==="},
+
+    {
+      "author": "aadideepchand20",
+      "content": "WHO THE HELL PUSHED DIRECTLY TO MAIN?? ARE YOU SERIOUS RIGHT NOW",
+      "timestamp": "2026-03-15T10:00:00.000Z",
+      "reactions": [{"emoji": {"name": "angry"}, "count": 5}]
+    },
+    {
+      "author": "lackshaj",
+      "content": "It wasn't me, don't bloody blame me for everything that goes wrong",
+      "timestamp": "2026-03-15T10:01:00.000Z",
+      "reactions": []
+    },
+    {
+      "author": "azynm",
+      "content": "The whole build is screwed because someone can't follow basic git rules. What the hell",
+      "timestamp": "2026-03-15T10:02:00.000Z",
+      "reactions": [{"emoji": {"name": "skull"}, "count": 3}]
+    },
+    {
+      "author": "sophacode",
+      "content": "You're all pissing me off, stop pointing fingers and just fix the damn thing",
+      "timestamp": "2026-03-15T10:03:00.000Z",
+      "reactions": [{"emoji": {"name": "angry"}, "count": 2}]
+    },
+    {
+      "author": "aadideepchand20",
+      "content": "This is absolute garbage. Hours of work down the drain because of one idiot",
+      "timestamp": "2026-03-15T10:05:00.000Z",
+      "reactions": [{"emoji": {"name": "rage"}, "count": 4}]
+    },
+
+    {"_comment": "=== BATCH 4: CALM — cool down, recovery, apologies ==="},
+
+    {
+      "author": "azynm",
+      "content": "Alright I'm sorry, let's all take a breath. I reverted the bad commit",
+      "timestamp": "2026-03-15T10:20:00.000Z",
+      "reactions": [{"emoji": {"name": "pray"}, "count": 3}]
+    },
+    {
+      "author": "lackshaj",
+      "content": "Yeah sorry for snapping. We're all tired. Build is green again",
+      "timestamp": "2026-03-15T10:22:00.000Z",
+      "reactions": [{"emoji": {"name": "heart"}, "count": 2}]
+    },
+    {
+      "author": "sophacode",
+      "content": "All good. Tests are passing again. Let's move forward",
+      "timestamp": "2026-03-15T10:25:00.000Z",
+      "reactions": [{"emoji": {"name": "white_check_mark"}, "count": 4}]
+    },
+    {
+      "author": "aadideepchand20",
+      "content": "My bad too. On a positive note the leaderboard feature is looking great",
+      "timestamp": "2026-03-15T10:28:00.000Z",
+      "reactions": [{"emoji": {"name": "thumbsup"}, "count": 2}]
+    },
+    {
+      "author": "azynm",
+      "content": "Good vibes from here. Focus mode activated, let's ship this thing",
+      "timestamp": "2026-03-15T10:30:00.000Z",
+      "reactions": [{"emoji": {"name": "rocket"}, "count": 3}]
+    },
+
+    {"_comment": "=== BATCH 5: POETIC — drama building again, doubt and stress ==="},
+
+    {
+      "author": "sophacode",
+      "content": "The API is timing out under load. This could be a serious problem for the demo",
+      "timestamp": "2026-03-15T10:50:00.000Z",
+      "reactions": [{"emoji": {"name": "warning"}, "count": 2}]
+    },
+    {
+      "author": "lackshaj",
+      "content": "Great, another thing breaking. We can't catch a break today can we",
+      "timestamp": "2026-03-15T10:52:00.000Z",
+      "reactions": [{"emoji": {"name": "weary"}, "count": 3}]
+    },
+    {
+      "author": "aadideepchand20",
+      "content": "I just checked Team Beta's demo and honestly theirs looks way better than ours",
+      "timestamp": "2026-03-15T10:55:00.000Z",
+      "reactions": [{"emoji": {"name": "disappointed"}, "count": 2}]
+    },
+    {
+      "author": "azynm",
+      "content": "Don't say that. We've been working our asses off. But yeah the pressure is real",
+      "timestamp": "2026-03-15T10:57:00.000Z",
+      "reactions": []
+    },
+    {
+      "author": "sophacode",
+      "content": "45 minutes left and half the features are still buggy. I'm stressing out",
+      "timestamp": "2026-03-15T11:00:00.000Z",
+      "reactions": [{"emoji": {"name": "scream"}, "count": 4}]
+    },
+
+    {"_comment": "=== BATCH 6: SUPER ANGRY — full meltdown, profanity, blame ==="},
+
+    {
+      "author": "lackshaj",
+      "content": "THE FREAKING DATABASE JUST WIPED ITSELF. WHAT THE ACTUAL HELL IS GOING ON",
+      "timestamp": "2026-03-15T11:10:00.000Z",
+      "reactions": [{"emoji": {"name": "scream"}, "count": 6}]
+    },
+    {
+      "author": "azynm",
+      "content": "Are you kidding me?? Who ran the migration script on production? That's so stupid",
+      "timestamp": "2026-03-15T11:11:00.000Z",
+      "reactions": [{"emoji": {"name": "rage"}, "count": 3}]
+    },
+    {
+      "author": "aadideepchand20",
+      "content": "I swear to god if we lose because of this crap I'm going to lose my mind",
+      "timestamp": "2026-03-15T11:12:00.000Z",
+      "reactions": [{"emoji": {"name": "angry"}, "count": 4}]
+    },
+    {
+      "author": "sophacode",
+      "content": "This is a complete dumpster fire. How the hell did no one set up backups",
+      "timestamp": "2026-03-15T11:13:00.000Z",
+      "reactions": [{"emoji": {"name": "skull"}, "count": 5}]
+    },
+    {
+      "author": "lackshaj",
+      "content": "Every single time we make progress someone screws it up. I'm done, absolutely done",
+      "timestamp": "2026-03-15T11:15:00.000Z",
+      "reactions": [{"emoji": {"name": "rage"}, "count": 3}]
+    },
+
+    {"_comment": "=== BATCH 7: CALM — redemption arc, things come together ==="},
+
+    {
+      "author": "sophacode",
+      "content": "Wait, I found a backup from 20 minutes ago. We can restore everything",
+      "timestamp": "2026-03-15T11:25:00.000Z",
+      "reactions": [{"emoji": {"name": "tada"}, "count": 6}]
+    },
+    {
+      "author": "azynm",
+      "content": "Sophia you absolute legend. Restoring now",
+      "timestamp": "2026-03-15T11:26:00.000Z",
+      "reactions": [{"emoji": {"name": "heart"}, "count": 4}]
+    },
+    {
+      "author": "aadideepchand20",
+      "content": "Everything is back online. All endpoints responding. We're good",
+      "timestamp": "2026-03-15T11:30:00.000Z",
+      "reactions": [{"emoji": {"name": "white_check_mark"}, "count": 5}]
+    },
+    {
+      "author": "lackshaj",
+      "content": "I just finished the UI polish. Honestly it looks really clean now",
+      "timestamp": "2026-03-15T11:33:00.000Z",
+      "reactions": [{"emoji": {"name": "fire"}, "count": 3}]
+    },
+    {
+      "author": "azynm",
+      "content": "We're ready for the demo. Great work everyone, proud of this team",
+      "timestamp": "2026-03-15T11:35:00.000Z",
+      "reactions": [{"emoji": {"name": "muscle"}, "count": 4}, {"emoji": {"name": "100"}, "count": 3}]
+    },
+
+    {"_comment": "=== BATCH 8: POETIC — bittersweet, reflective tension before demo ==="},
+
+    {
+      "author": "aadideepchand20",
+      "content": "Judges are setting up. I feel sick to my stomach honestly",
+      "timestamp": "2026-03-15T11:50:00.000Z",
+      "reactions": [{"emoji": {"name": "nauseated_face"}, "count": 2}]
+    },
+    {
+      "author": "lackshaj",
+      "content": "What if the live demo crashes? We haven't tested under real load at all",
+      "timestamp": "2026-03-15T11:52:00.000Z",
+      "reactions": [{"emoji": {"name": "cold_sweat"}, "count": 3}]
+    },
+    {
+      "author": "sophacode",
+      "content": "I found a bug in the scoring display. We literally have 5 minutes to fix it",
+      "timestamp": "2026-03-15T11:55:00.000Z",
+      "reactions": [{"emoji": {"name": "warning"}, "count": 4}]
+    },
+    {
+      "author": "azynm",
+      "content": "Are you joking. Not now. Not right before we present. This can't be happening",
+      "timestamp": "2026-03-15T11:56:00.000Z",
+      "reactions": [{"emoji": {"name": "scream"}, "count": 3}]
+    },
+    {
+      "author": "aadideepchand20",
+      "content": "Every other team looks so confident. We look like we're falling apart",
+      "timestamp": "2026-03-15T11:58:00.000Z",
+      "reactions": [{"emoji": {"name": "pensive"}, "count": 2}]
+    },
+
+    {"_comment": "=== BATCH 9: SUPER ANGRY — last minute panic explosion ==="},
+
+    {
+      "author": "lackshaj",
+      "content": "IT CRASHED. THE WHOLE BLOODY THING CRASHED DURING SETUP. I WANT TO SCREAM",
+      "timestamp": "2026-03-15T12:00:00.000Z",
+      "reactions": [{"emoji": {"name": "rage"}, "count": 5}]
+    },
+    {
+      "author": "azynm",
+      "content": "How the hell does this keep happening?? We tested this a hundred damn times",
+      "timestamp": "2026-03-15T12:01:00.000Z",
+      "reactions": [{"emoji": {"name": "angry"}, "count": 3}]
+    },
+    {
+      "author": "aadideepchand20",
+      "content": "This is such bullshit. We deserve better than this after pulling an all-nighter",
+      "timestamp": "2026-03-15T12:02:00.000Z",
+      "reactions": [{"emoji": {"name": "rage"}, "count": 4}]
+    },
+    {
+      "author": "sophacode",
+      "content": "STOP PANICKING AND RESTART THE DAMN SERVER. NOW.",
+      "timestamp": "2026-03-15T12:03:00.000Z",
+      "reactions": []
+    },
+    {
+      "author": "lackshaj",
+      "content": "I hate hackathons I hate coding I hate everything right now",
+      "timestamp": "2026-03-15T12:04:00.000Z",
+      "reactions": [{"emoji": {"name": "sob"}, "count": 6}]
+    }
+  ],
+
+  "metadata": {
+    "description": "Dummy Discord messages ordered in repeating calm/poetic/angry cycles for demo",
+    "version": "2.0",
+    "usernames": ["azynm", "lackshaj", "aadideepchand20", "sophacode"],
+    "batch_size": 5,
+    "cycle_order": ["calm", "poetic", "super_angry"],
+    "batch_guide": {
+      "batch_1": "CALM — productive morning, positive vibes",
+      "batch_2": "POETIC — frustration building, negativity, doubt",
+      "batch_3": "SUPER ANGRY — toxic blowup, profanity, blame",
+      "batch_4": "CALM — apologies, recovery, back on track",
+      "batch_5": "POETIC — stress returns, pressure mounting",
+      "batch_6": "SUPER ANGRY — database disaster, full meltdown",
+      "batch_7": "CALM — redemption, backup saves the day",
+      "batch_8": "POETIC — pre-demo anxiety and dread",
+      "batch_9": "SUPER ANGRY — demo crash, last-minute panic"
+    }
+  }
+}
