@@ -1,4 +1,4 @@
-from flask import Flask, redirect, url_for, session, request, render_template, Response
+from flask import Flask, redirect, url_for, session, request, render_template, Response, jsonify
 import os
 from dotenv import load_dotenv
 load_dotenv(override=True)
@@ -8,6 +8,7 @@ import requests
 from discord_logic import fetch_all_messages, analyse_sentiment
 from commentator.commentator import generate_commentary_audio
 from github_logic import get_detailed_github_data
+from scoring import update_scores, get_leaderboard, set_display_name, resolve_player
 import json
 from pathlib import Path
 import uuid
@@ -73,6 +74,7 @@ def collect_discord_events(dashboard_id, github_token=None):
     }
 
     # Add GitHub data if token available
+    github_data = []
     if github_token:
         github_headers = {"Authorization": f"token {github_token}"}
         github_data = get_detailed_github_data("azynm/blahajathon", github_headers, last_time)
@@ -105,6 +107,9 @@ def collect_discord_events(dashboard_id, github_token=None):
                     })
 
         print(f"GitHub data — commits: {len(events['recent_commits'])}, PRs merged: {events['pull_requests_merged']}")
+
+    # Update scores with the fetched data
+    update_scores(discord_messages, sentiment, github_data)
 
     # Limit commits to avoid prompt being too long
     events["recent_commits"] = events["recent_commits"][:5]
@@ -228,10 +233,9 @@ def dashboard(dashboard_id):
     except requests.RequestException:
         project_name = dashboard_id
     
-    with open('players.json', 'r') as file:
-        data = json.load(file)
+    leaderboard = get_leaderboard()
 
-    return render_template("dashboard.html", players=data, project_name=project_name)
+    return render_template("dashboard.html", players=leaderboard, project_name=project_name, autoplay_commentary=session.get('autoplay_commentary', False))
 
 
 
@@ -254,6 +258,11 @@ def settings():
 
         if display_name:
             session['profile_name'] = display_name
+            # Persist display name to scoring system
+            discord_username = session.get('username', '')
+            canonical = resolve_player(discord_username)
+            if canonical:
+                set_display_name(canonical, display_name)
 
         if picture_file and picture_file.filename:
             if _is_allowed_image(picture_file.filename):
@@ -271,6 +280,9 @@ def settings():
                 error_message = "Unsupported image format. Use png, jpg, jpeg, gif, or webp."
 
         if not error_message:
+            # Save autoplay preference
+            autoplay = request.form.get('autoplay_commentary', '0')
+            session['autoplay_commentary'] = autoplay == '1'
             return redirect(url_for('settings', saved='1'))
 
     saved = request.args.get('saved') == '1'
@@ -279,6 +291,7 @@ def settings():
         current_user=_profile_context(),
         saved=saved,
         error_message=error_message,
+        autoplay_commentary=session.get('autoplay_commentary', False),
     )
 
 
@@ -304,6 +317,16 @@ def commentary_history_api(dashboard_id):
                 timestamp = time.time()
                 entry_id = hashlib.md5(f"{dashboard_id}_{timestamp}".encode()).hexdigest()[:12]
 
+                # Build event log bullets
+                event_log = []
+                for h in events.get("discord_highlights", []):
+                    event_log.append(h)
+                for c in events.get("recent_commits", []):
+                    event_log.append(f"{c['author']} committed: {c['message']}")
+                pr_count = events.get("pull_requests_merged", 0)
+                if pr_count:
+                    event_log.append(f"{pr_count} pull request(s) merged")
+
                 if dashboard_id not in commentary_history:
                     commentary_history[dashboard_id] = []
 
@@ -312,7 +335,8 @@ def commentary_history_api(dashboard_id):
                     "timestamp": timestamp,
                     "style": style,
                     "script": script,
-                    "audio": audio
+                    "audio": audio,
+                    "event_log": event_log
                 })
                 commentary_history[dashboard_id] = commentary_history[dashboard_id][-10:]
                 last_generated[dashboard_id] = timestamp
@@ -327,7 +351,8 @@ def commentary_history_api(dashboard_id):
         "id": e["id"],
         "timestamp": e["timestamp"],
         "style": e["style"],
-        "script": e["script"]
+        "script": e["script"],
+        "event_log": e.get("event_log", [])
     } for e in history])
 
 
@@ -379,6 +404,13 @@ def github_repos():
         "description": repo.get("description", ""),
         "url": repo["html_url"]
     } for repo in repos])
+
+
+@app.route('/api/leaderboard')
+def leaderboard_api():
+    """Return the current leaderboard with scores."""
+    leaderboard = get_leaderboard()
+    return jsonify(leaderboard)
 
 
 #Actually starts web server
