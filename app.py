@@ -18,7 +18,6 @@ from datetime import datetime, timedelta
 import time
 #import gunicorn
 #import elevenlabs
-import requests_cache
 
 # Cache is stored in a local SQLite file 'discord_github_cache.sqlite'
 requests_cache.install_cache(
