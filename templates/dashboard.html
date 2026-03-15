@@ -57,6 +57,24 @@
                     console.error('Leaderboard fetch failed:', e);
                 }
             },
+            positiveSlots(player) {
+                const positive = Number(player?.stats?.positive_messages || 0);
+                const negative = Number(player?.stats?.negative_messages || 0);
+                const total = positive + negative;
+                if (total <= 0) return 0;
+                return Math.round((positive / total) * 5);
+            },
+            negativeSlots(player) {
+                const positive = Number(player?.stats?.positive_messages || 0);
+                const negative = Number(player?.stats?.negative_messages || 0);
+                const total = positive + negative;
+                if (total <= 0) return 0;
+                return Math.round((negative / total) * 5);
+            },
+            neutralSlots(player) {
+                const neutral = 5 - this.positiveSlots(player) - this.negativeSlots(player);
+                return Math.max(0, neutral);
+            },
             async fetchHistory() {
                 if (this.isFetching) return;
                 this.isFetching = true;
@@ -217,24 +235,28 @@
                                             <span
                                                 class="inline-flex h-5 w-5 items-center justify-center rounded-full"
                                                 :class="{
-                                                    'bg-emerald-100 text-emerald-600': i <= Math.round(player.stats.positive_messages / Math.max(player.stats.positive_messages + player.stats.negative_messages, 1) * 5),
-                                                    'bg-rose-100 text-rose-600': i > Math.round(player.stats.positive_messages / Math.max(player.stats.positive_messages + player.stats.negative_messages, 1) * 5) && i <= Math.round((player.stats.positive_messages + player.stats.negative_messages) / Math.max(player.stats.positive_messages + player.stats.negative_messages, 1) * 5),
-                                                    'bg-slate-100 text-slate-500': i > Math.round((player.stats.positive_messages + player.stats.negative_messages) / Math.max(player.stats.positive_messages + player.stats.negative_messages, 1) * 5)
+                                                    'bg-emerald-100 text-emerald-600': i <= positiveSlots(player),
+                                                    'bg-rose-100 text-rose-600': i > positiveSlots(player) && i <= positiveSlots(player) + negativeSlots(player),
+                                                    'bg-slate-100 text-slate-500': i > positiveSlots(player) + negativeSlots(player)
                                                 }"
                                             >
-                                                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                                <svg x-show="i <= positiveSlots(player)" class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                                                     <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.8" />
                                                     <circle cx="7.5" cy="8.2" r="1" fill="currentColor" />
                                                     <circle cx="12.5" cy="8.2" r="1" fill="currentColor" />
-                                                    <template x-if="i <= Math.round(player.stats.positive_messages / Math.max(player.stats.positive_messages + player.stats.negative_messages, 1) * 5)">
-                                                        <path d="M6.8 11.2c.85 1.15 1.94 1.72 3.2 1.72 1.26 0 2.35-.57 3.2-1.72" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-                                                    </template>
-                                                    <template x-if="i > Math.round(player.stats.positive_messages / Math.max(player.stats.positive_messages + player.stats.negative_messages, 1) * 5) && i <= Math.round((player.stats.positive_messages + player.stats.negative_messages) / Math.max(player.stats.positive_messages + player.stats.negative_messages, 1) * 5)">
-                                                        <path d="M6.8 13.2c.85-1.15 1.94-1.72 3.2-1.72 1.26 0 2.35.57 3.2 1.72" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-                                                    </template>
-                                                    <template x-if="i > Math.round((player.stats.positive_messages + player.stats.negative_messages) / Math.max(player.stats.positive_messages + player.stats.negative_messages, 1) * 5)">
-                                                        <path d="M7 12h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-                                                    </template>
+                                                    <path d="M6.8 11.2c.85 1.15 1.94 1.72 3.2 1.72 1.26 0 2.35-.57 3.2-1.72" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                                                </svg>
+                                                <svg x-show="i > positiveSlots(player) && i <= positiveSlots(player) + negativeSlots(player)" class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                                    <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.8" />
+                                                    <circle cx="7.5" cy="8.2" r="1" fill="currentColor" />
+                                                    <circle cx="12.5" cy="8.2" r="1" fill="currentColor" />
+                                                    <path d="M6.8 13.2c.85-1.15 1.94-1.72 3.2-1.72 1.26 0 2.35.57 3.2 1.72" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                                                </svg>
+                                                <svg x-show="i > positiveSlots(player) + negativeSlots(player)" class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                                    <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.8" />
+                                                    <circle cx="7.5" cy="8.2" r="1" fill="currentColor" />
+                                                    <circle cx="12.5" cy="8.2" r="1" fill="currentColor" />
+                                                    <path d="M7 12h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
                                                 </svg>
                                             </span>
                                         </template>
