@@ -115,15 +115,8 @@ def dashboard(dashboard_id):
     if 'discord_access_token' not in session or 'github_access_token' not in session:
         return redirect(url_for('index'))
 
-    #Setup headers
+    # Setup headers
     discord_headers = {"Authorization": f"Bot {BOT_TOKEN}"}
-    github_headers = {"Authorization": f"token {session['github_access_token']}"}
-    now = datetime.now()
-    last_time = now - timedelta(hours=3)
-
-    #Fetch all data
-    github_data = get_detailed_github_data("azynm/blahajathon", github_headers, last_time)
-    discord_data = fetch_all_messages(dashboard_id, discord_headers, last_time)
 
     project_name = dashboard_id
     try:
@@ -256,7 +249,7 @@ def commentary_history_api(dashboard_id):
 
     history = commentary_history.get(dashboard_id, [])
     # Return without audio bytes
-    return json.dumps([{
+    return jsonify([{
         "id": e["id"],
         "timestamp": e["timestamp"],
         "style": e["style"],
@@ -281,7 +274,7 @@ def commentary_audio(dashboard_id, entry_id):
 def github_repos():
     """Fetch the user's GitHub repositories."""
     if 'github_access_token' not in session:
-        return json.dumps({"error": "Not authenticated with GitHub"}), 401
+        return jsonify({"error": "Not authenticated with GitHub"}), 401
 
     github_headers = {"Authorization": f"token {session['github_access_token']}"}
     response = requests.get(
@@ -290,11 +283,11 @@ def github_repos():
     )
 
     if response.status_code != 200:
-        return json.dumps({"error": "Failed to fetch repos"}), 500
+        return jsonify({"error": "Failed to fetch repos"}), 500
 
     repos = response.json()
     # Return simplified repo data
-    return json.dumps([{
+    return jsonify([{
         "id": repo["id"],
         "name": repo["name"],
         "full_name": repo["full_name"],
