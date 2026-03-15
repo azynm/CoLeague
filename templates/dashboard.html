@@ -154,7 +154,7 @@
                         x-transition
                         class="glass absolute right-0 mt-3 w-48 rounded-xl p-2 text-sm"
                     >
-                        <a href="#" onclick="history.back(); return false;" class="mt-1 block w-full rounded-lg px-3 py-2 text-left text-xs font-semibold tracking-wide text-slate-700 hover:bg-white/50">Go Back</a>
+                        <a href="#" onclick="return handleGoBack(event);" class="mt-1 block w-full rounded-lg px-3 py-2 text-left text-xs font-semibold tracking-wide text-slate-700 hover:bg-white/50">Go Back</a>
                         <a href="{{ url_for('settings') }}" class="block w-full rounded-lg px-3 py-2 text-left text-xs font-semibold tracking-wide text-slate-700 hover:bg-white/50">Settings</a>
                         <a href="{{ url_for('logout') }}" class="block w-full rounded-lg px-3 py-2 text-left text-xs font-semibold tracking-wide text-slate-700 hover:bg-white/50">Logout</a>
                     </div>
@@ -479,7 +479,36 @@
     <audio id="commentary-audio" style="display: none;"></audio>
 
     <script>
-        // No external polling needed — handled by Alpine x-init above
+        function handleGoBack(event) {
+            if (event) event.preventDefault();
+
+            const homeUrl = "{{ url_for('index') }}";
+            const referrer = document.referrer || "";
+
+            if (!referrer) {
+                window.location.href = homeUrl;
+                return false;
+            }
+
+            try {
+                const refUrl = new URL(referrer);
+                const here = window.location;
+                const sameOrigin = refUrl.origin === here.origin;
+                const samePath = refUrl.pathname === here.pathname;
+                const refIsSettings = refUrl.pathname.startsWith("/settings");
+
+                if (!sameOrigin || samePath || refIsSettings || window.history.length <= 1) {
+                    window.location.href = homeUrl;
+                    return false;
+                }
+
+                window.history.back();
+            } catch {
+                window.location.href = homeUrl;
+            }
+
+            return false;
+        }
     </script>
 
     <!-- Mosaic Animation Script -->
