@@ -3,26 +3,26 @@
     "Zayn": {
       "discord_id": "azynm",
       "github_id": "azynm",
-      "overall": 1027,
-      "discord_score": 587,
-      "git_score": 440,
+      "overall": 1042,
+      "discord_score": 590,
+      "git_score": 452,
       "recent_record": [
         "bad",
         "bad",
-        "bad",
-        "bad",
-        "bad"
+        "good",
+        "good",
+        "good"
       ],
       "stats": {
         "messages_sent": 0,
         "positive_mentions": 2,
         "negative_mentions": 16,
-        "commits": 60,
+        "commits": 66,
         "merges": 0,
         "merge_conflicts": 0,
         "main_commits": 0,
         "branches_used": [],
-        "messages": 413,
+        "messages": 416,
         "spam_penalty": 0,
         "reply_bonus": 300,
         "new_branches": 2,
@@ -62,15 +62,15 @@
     "Aadi": {
       "discord_id": "aadideepchand20",
       "github_id": "Aadi Deepchand",
-      "overall": 1241,
-      "discord_score": 1129,
+      "overall": 1248,
+      "discord_score": 1136,
       "git_score": 112,
       "recent_record": [
         "bad",
         "bad",
         "bad",
-        "bad",
-        "bad"
+        "neutral",
+        "neutral"
       ],
       "stats": {
         "messages_sent": 0,
@@ -81,36 +81,36 @@
         "merge_conflicts": 0,
         "main_commits": 0,
         "branches_used": [],
-        "messages": 840,
-        "spam_penalty": 0,
-        "reply_bonus": 300
+        "messages": 848,
+        "spam_penalty": -4,
+        "reply_bonus": 303
       }
     },
     "Sophia": {
       "discord_id": "soupdewoop",
       "github_id": "sophacode",
-      "overall": 1179,
-      "discord_score": 663,
+      "overall": 1195,
+      "discord_score": 679,
       "git_score": 516,
       "recent_record": [
-        "bad",
-        "bad",
-        "bad",
+        "good",
+        "neutral",
+        "good",
         "good",
         "good"
       ],
       "stats": {
         "messages_sent": 0,
-        "positive_mentions": 2,
+        "positive_mentions": 3,
         "negative_mentions": 1,
         "commits": 93,
         "merges": 0,
         "merge_conflicts": 0,
         "main_commits": 0,
         "branches_used": [],
-        "messages": 361,
+        "messages": 366,
         "spam_penalty": 0,
-        "reply_bonus": 300,
+        "reply_bonus": 306,
         "new_branches": 1,
         "prs_merged": 34,
         "good_merges": 30
@@ -123,5 +123,5 @@
     "commentatorfix": "Zayn",
     "improve-commentary": "Zayn"
   },
-  "last_updated": "2026-03-15T04:41:39.258888"
+  "last_updated": "2026-03-15T05:02:24.450612"
 }
