@@ -235,7 +235,7 @@ def dashboard(dashboard_id):
     
     leaderboard = get_leaderboard()
 
-    return render_template("dashboard.html", players=leaderboard, project_name=project_name)
+    return render_template("dashboard.html", players=leaderboard, project_name=project_name, autoplay_commentary=session.get('autoplay_commentary', False))
 
 
 
@@ -280,6 +280,9 @@ def settings():
                 error_message = "Unsupported image format. Use png, jpg, jpeg, gif, or webp."
 
         if not error_message:
+            # Save autoplay preference
+            autoplay = request.form.get('autoplay_commentary', '0')
+            session['autoplay_commentary'] = autoplay == '1'
             return redirect(url_for('settings', saved='1'))
 
     saved = request.args.get('saved') == '1'
@@ -288,6 +291,7 @@ def settings():
         current_user=_profile_context(),
         saved=saved,
         error_message=error_message,
+        autoplay_commentary=session.get('autoplay_commentary', False),
     )
 
 

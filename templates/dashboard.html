@@ -26,6 +26,8 @@
             isPlaying: false,
             countdown: 20,
             isFetching: false,
+            autoplay: {{ 'true' if autoplay_commentary is defined and autoplay_commentary else 'false' }},
+            lastSeenEntryId: null,
             playCommentary(entryId) {
                 const audioPlayer = document.getElementById('commentary-audio');
                 if (this.currentlyPlaying === entryId && this.isPlaying) {
@@ -61,7 +63,16 @@
                 try {
                     const response = await fetch('/api/commentary-history/{{ request.view_args.dashboard_id }}');
                     if (response.ok) {
-                        this.commentaryHistory = await response.json();
+                        const newHistory = await response.json();
+                        const latestNew = newHistory.length > 0 ? newHistory[newHistory.length - 1] : null;
+                        this.commentaryHistory = newHistory;
+                        // Autoplay if enabled and there's a new entry we haven't seen
+                        if (this.autoplay && latestNew && latestNew.id !== this.lastSeenEntryId) {
+                            this.lastSeenEntryId = latestNew.id;
+                            this.playCommentary(latestNew.id);
+                        } else if (latestNew && !this.lastSeenEntryId) {
+                            this.lastSeenEntryId = latestNew.id;
+                        }
                     }
                 } catch (e) {
                     console.error('Commentary fetch failed:', e);
