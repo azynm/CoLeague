@@ -249,7 +249,7 @@ def commentary_history_api(dashboard_id):
     last_gen = last_generated.get(dashboard_id, 0)
 
     # Regenerate if >60s since last generation AND messages have changed
-    if now - last_gen > 20:
+    if now - last_gen > 60:
         discord_headers = {"Authorization": f"Bot {BOT_TOKEN}"}
         github_headers = {"Authorization": f"token {session['github_access_token']}"}
         events = collect_events(dashboard_id, discord_headers, github_headers, "azynm/CoLeague")
