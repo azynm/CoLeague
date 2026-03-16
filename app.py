@@ -19,15 +19,6 @@ import time
 #import gunicorn
 #import elevenlabs
 
-# Cache is stored in a local SQLite file 'discord_github_cache.sqlite'
-requests_cache.install_cache(
-    'discord_github_cache', 
-    backend='sqlite', 
-    expire_after=300,  # 300 seconds = 5 minutes
-    allowable_methods=['GET'], # Only cache GET requests
-    filter_on_headers=True # Ensure different tokens get different cache entries
-)
-
 #Setup constants
 DISCORD_CLIENT_ID = os.getenv("DISCORD_CLIENT_ID")
 DISCORD_CLIENT_SECRET = os.getenv("DISCORD_CLIENT_SECRET")
